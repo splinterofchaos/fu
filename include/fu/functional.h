@@ -232,4 +232,17 @@ constexpr Enabled_f<Enabler, F> enable_if_f(F f) {
   return {std::move(f)};
 }
 
+template<class X>
+struct Constant {
+  X x;
+
+  constexpr Constant(X x) : x(std::move(x)) { }
+
+  const X& operator() () const& { return x; }
+  X&       operator() () &      { return x; }
+  X        operator() () &&     { return std::move(x); }
+};
+
+constexpr auto constant = MakeT<Constant>{};
+
 } // namespace fu
