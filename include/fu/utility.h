@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <fu/functional.h>
 
 namespace fu {

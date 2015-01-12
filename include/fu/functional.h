@@ -1,6 +1,8 @@
 
 /// General function-object utilities.
 
+#pragma once
+
 #include <utility>
 #include <functional>
 
