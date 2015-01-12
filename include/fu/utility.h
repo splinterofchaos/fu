@@ -60,7 +60,7 @@ struct bit_and_f {
 };
 constexpr auto bit_and = numeric_binary(bit_and_f{}, 0);
 
-// Helper to define binary operations.
+// Helper to define binary relations.
 #define DECL_REL_OP(name, op)                              \
   struct name##_f {                                        \
     template<class X, class Y>                             \
@@ -71,14 +71,30 @@ constexpr auto bit_and = numeric_binary(bit_and_f{}, 0);
   constexpr auto name = multary(name##_f{});
 
 // Relational operators
-DECL_REL_OP(less,       <); 
+DECL_REL_OP(less,       <);
 DECL_REL_OP(greater,    >);
 DECL_REL_OP(eq,         ==);
 DECL_REL_OP(neq,        !=);
 DECL_REL_OP(less_eq,    <=);
 DECL_REL_OP(greater_eq, >=);
 
+// Helper to define unary operators.
+#define DECL_UNARY(name, op)                               \
+  constexpr struct name##_f {                              \
+    template<class X>                                      \
+    constexpr auto operator() (X&& x) const                \
+      -> decltype(op std::declval<X>())                    \
+    { return op std::forward<X>(x); }                      \
+  } name{};
+
+DECL_UNARY(pos,   +);
+DECL_UNARY(neg,   -);
+DECL_UNARY(not_,  !);
+DECL_UNARY(deref, *);
+DECL_UNARY(addr,  &);  // TODO: Use std::address_of().
+
 #undef DECL_BIN_OP
 #undef DECL_REL_OP
+#undef DECL_UNARY
 
 } // namespace fu

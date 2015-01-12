@@ -1,5 +1,5 @@
 
-#include <fu/utility.h>
+#include <fu/fu.h>
 
 int main() {
   static_assert(fu::add(1)(2) == 3, "");
@@ -9,4 +9,6 @@ int main() {
   static_assert(fu::lshift(1,1) == 2, "");
   static_assert(fu::eq(10, 10) == true, "");
   static_assert(fu::less(5, 10) == true, "");
+  static_assert(fu::not_(false), "");
+  static_assert(fu::neg(-1) == 1, "");
 }
