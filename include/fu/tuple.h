@@ -28,17 +28,57 @@ constexpr size_t size(const std::tuple<X...>&) {
 template<class Tuple, size_t I>
 using Elem = decltype(std::get<I>(std::declval<Tuple>()));
 
+template<size_t i, class F, class...Tuple>
+constexpr auto applyI(F&& f, Tuple&&...t)
+  -> std::result_of_t<F(Elem<Tuple, i>...)>
+{
+  return f(std::get<i>(t)...);
+}
+
+template<size_t i>
+struct applyI_f {
+  template<class...X>
+  constexpr auto operator() (X&&...x) const
+    -> decltype(applyI<i>(std::declval<X>()...))
+  {
+    return applyI<i>(std::forward<X>(x)...);
+  }
+};
+
 /// map(f, {x...}) = {f(x)...}
 struct map_f {
-  template<class F, class Tuple, class I, I...N>
-  constexpr auto operator() (const F& f, Tuple&& t,
-                             std::integer_sequence<I, N...>) const {
-    return tuple(f(std::get<N>(std::forward<Tuple>(t)))...);
+  template<size_t...i, class F, class Tuple>
+  constexpr auto do_map(std::index_sequence<i...>,
+                        const F& f, Tuple&& t) const {
+
+    return tuple(applyI<i>(f, std::forward<Tuple>(t))...);
+  }
+  template<size_t...i, class F, class Tuple, class...TupleB,
+           class = std::enable_if_t<sizeof...(TupleB)>>
+  constexpr auto do_map(std::index_sequence<i...>,
+                        const F& f, Tuple&& t, TupleB&&...tb) const {
+    // let gi = part(f, xi) where xi is the i'th element of the tuple, t.
+    // let ti = map(gi, tb...)
+    // Since map(g) returns a tuple, our result is obtained by concatenating
+    // the result of each ti.
+    using namespace std;
+    return tuple_cat((*this)(closure(f, get<i>(forward<Tuple>(t))),
+                             forward<TupleB>(tb)...)...);
   }
 
-  template<class F, class Tuple>
-  constexpr auto operator() (const F& f, Tuple&& t) const {
-    return (*this)(f, std::forward<Tuple>(t), iseq::make(t));
+  template<size_t...i, class F, class...Tuple>
+  constexpr auto operator() (std::index_sequence<i...> is,
+                             const F& f, Tuple&&...t) const {
+    return do_map(is, f, std::forward<Tuple>(t)...);
+  }
+
+  template<class F, class Tuple, class...Tpls>
+  constexpr auto operator() (const F& f, Tuple&& t, Tpls&&...ts) const {
+    using Size = std::tuple_size<std::decay_t<Tuple>>;
+    return do_map(std::make_index_sequence<Size::value>{},
+                  f,
+                  std::forward<Tuple>(t),
+                  std::forward<Tpls>(ts)...);
   }
 };
 
@@ -118,8 +158,8 @@ constexpr struct init_f {
   template<class Tuple>
   constexpr auto operator() (Tuple&& t) const {
     using Size = std::tuple_size<std::decay_t<Tuple>>;
-    return map(identity, std::forward<Tuple>(t),
-               iseq::take<Size::value - 1>(iseq::make(t)));
+    return map(iseq::take<Size::value - 1>(iseq::make(t)),
+               identity, std::forward<Tuple>(t));
   }
 } init{};
 
@@ -127,8 +167,8 @@ constexpr struct tail_f {
   /// tail({y, x...}) = {x...}
   template<class Tuple>
   constexpr auto operator() (Tuple&& t) const {
-    return map(identity, std::forward<Tuple>(t),
-               iseq::drop<1>(iseq::make(t)));
+    return map(iseq::drop<1>(iseq::make(t)),
+               identity, std::forward<Tuple>(t));
   }
 } tail{};
 

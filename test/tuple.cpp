@@ -2,7 +2,7 @@
 #include <iostream>
 #include <array>
 
-#include <fu/tuple.h>
+#include <fu/fu.h>
 
 struct Double {
   template<class X>
@@ -31,6 +31,9 @@ int main() {
 
   static_assert(std::get<0>(t2) == 2, "");
   static_assert(std::get<1>(t2) == 5.0, "");
+
+  static_assert(map(fu::add, tuple(0,1), tuple(2,4)) == tuple(2,4,3,5), "");
+
   static_assert(apply(add, t2) == 7.0, "");
   static_assert(apply(add)(t2) == 7.0, "");
   static_assert(foldl(add, 0, t2) == 7.0, "");
