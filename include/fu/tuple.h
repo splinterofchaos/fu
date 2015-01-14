@@ -45,6 +45,14 @@ struct applyI_f {
   }
 };
 
+struct apply_rows_f {
+  template<size_t...i, class F, class...T>
+  constexpr auto operator() (std::index_sequence<i...>, F&& f, T&&...t) const {
+    return tuple(applyI<i>(f, std::forward<T>(t)...)...);
+  }
+};
+constexpr auto apply_rows = multary(apply_rows_f{});
+
 /// map(f, {x...}) = {f(x)...}
 struct map_f {
   template<size_t...i, class F, class Tuple>
@@ -83,6 +91,25 @@ struct map_f {
 };
 
 constexpr auto map = multary(map_f{});
+
+/// ap({f,g,h}, {x,y,z}, {a,b,c}) = {f(x,a), g(y,b), h(z,c)}
+struct ap_f {
+  template<size_t...i, class Fs, class...Xs>
+  constexpr auto operator() (std::index_sequence<i...> is,
+                             Fs&& fs, Xs&&...xs) const {
+    return apply_rows(is, identity, fs, std::forward<Xs>(xs)...);
+  }
+
+  template<class Fs, class...Xs>
+  constexpr auto operator() (Fs&& fs, Xs&&...xs) const {
+    using Size = std::tuple_size<std::decay_t<Fs>>;
+    return (*this)(std::make_index_sequence<Size::value>{},
+                   std::forward<Fs>(fs),
+                   std::forward<Xs>(xs)...);
+  }
+};
+
+constexpr auto ap = multary(ap_f{});
 
 struct foldl_f {
   template<class F, class X, class Tuple, class I, I A>

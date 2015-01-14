@@ -49,6 +49,11 @@ int main() {
   static_assert(init(t2) == tuple(2), "");
   static_assert(tail(t2) == tuple(5.0), "");
 
+  constexpr auto apTest = ap(tuple(fu::sub, fu::add))(tuple(3,  1)
+                                                     ,tuple(2, -1)
+                                                     ,tuple(1,  1));
+  static_assert(apTest == tuple(0,1), "");
+
   int x = 1;
   auto ref = tuple(std::ref(x), std::cref(x));
   static_assert(std::is_same<decltype(ref), std::tuple<int&, const int&>>::value, "");
