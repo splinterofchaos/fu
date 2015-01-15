@@ -24,6 +24,15 @@ constexpr size_t size(const std::tuple<X...>&) {
   return sizeof...(X);
 }
 
+constexpr struct concat_f {
+  template<class...Tuple>
+  constexpr auto operator() (Tuple&&...t) const
+    -> decltype(std::tuple_cat(std::declval<Tuple>()...))
+  {
+    return std::tuple_cat(std::forward<Tuple>(t)...);
+  }
+} concat{};
+
 /// A perfect-forwarding version of std::tuple_element
 template<class Tuple, size_t I>
 using Elem = decltype(std::get<I>(std::declval<Tuple>()));
@@ -70,8 +79,8 @@ struct map_f {
     // Since map(g) returns a tuple, our result is obtained by concatenating
     // the result of each ti.
     using namespace std;
-    return tuple_cat((*this)(closure(f, get<i>(forward<Tuple>(t))),
-                             forward<TupleB>(tb)...)...);
+    return concat((*this)(closure(f, get<i>(forward<Tuple>(t))),
+                          forward<TupleB>(tb)...)...);
   }
 
   template<size_t...i, class F, class...Tuple>
