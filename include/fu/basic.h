@@ -234,12 +234,12 @@ struct Part {
   }
 
   template<class...Y>
-  constexpr std::result_of_t<F(X..., Y...)> operator() (Y&&...y) const & {
+  constexpr std::result_of_t<const F&(X..., Y...)> operator() (Y&&...y) const & {
     return tpl::apply(f, std::tuple_cat(t, args(std::forward<Y>(y)...)));
   }
 
   template<class...Y>
-  constexpr std::result_of_t<F(X..., Y...)> operator() (Y&&...y) && {
+  constexpr std::result_of_t<F&&(X..., Y...)> operator() (Y&&...y) && {
     return tpl::apply(std::move(f),
                       std::tuple_cat(std::move(t), args(std::forward<Y>(y)...)));
   }

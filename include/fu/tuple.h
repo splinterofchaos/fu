@@ -92,6 +92,25 @@ struct map_f {
 
 constexpr auto map = multary(map_f{});
 
+/// zip(f, {x,y,z}, {a,b,c}) = {f(x,a), f(y,b), f(z,c)}
+struct zip_f {
+  template<size_t...i, class F, class...T>
+  constexpr auto operator() (std::index_sequence<i...> is, F& f, T&&...t) const {
+    return apply_rows(is, f, std::forward<T>(t)...);
+  }
+
+  template<class F, class T, class...U>
+  constexpr auto operator() (F& f, T&& t, U&&...u) const {
+    using Size = std::tuple_size<std::decay_t<T>>;
+    return (*this)(std::make_index_sequence<Size::value>{},
+                   std::forward<F>(f),
+                   std::forward<T>(t),
+                   std::forward<U>(u)...);
+  }
+};
+
+constexpr auto zip = multary(zip_f{});
+
 /// ap({f,g,h}, {x,y,z}, {a,b,c}) = {f(x,a), g(y,b), h(z,c)}
 struct ap_f {
   template<size_t...i, class Fs, class...Xs>
@@ -110,6 +129,8 @@ struct ap_f {
 };
 
 constexpr auto ap = multary(ap_f{});
+// FIXME: Should be definable by this equation:
+//constexpr auto ap = zip(identity);
 
 struct foldl_f {
   template<class F, class X, class Tuple, class I, I A>

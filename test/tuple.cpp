@@ -49,10 +49,14 @@ int main() {
   static_assert(init(t2) == tuple(2), "");
   static_assert(tail(t2) == tuple(5.0), "");
 
-  constexpr auto apTest = ap(tuple(fu::sub, fu::add))(tuple(3,  1)
-                                                     ,tuple(2, -1)
-                                                     ,tuple(1,  1));
+  constexpr auto apTest = ap( tuple(fu::sub, fu::add)
+                            , tuple(      3,       1)
+                            , tuple(      2,      -1)
+                            , tuple(      1,       1));
   static_assert(apTest == tuple(0,1), "");
+
+  constexpr auto zipTest = zip(fu::add, tuple(0, 1), tuple(1, 2), tuple(2, 3));
+  static_assert(zipTest == tuple(3,6), "");
 
   int x = 1;
   auto ref = tuple(std::ref(x), std::cref(x));
