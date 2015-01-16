@@ -125,7 +125,7 @@ struct ap_f {
   template<size_t...i, class Fs, class...Xs>
   constexpr auto operator() (std::index_sequence<i...> is,
                              Fs&& fs, Xs&&...xs) const {
-    return apply_rows(is, identity, fs, std::forward<Xs>(xs)...);
+    return apply_rows(is, invoke, fs, std::forward<Xs>(xs)...);
   }
 
   template<class Fs, class...Xs>
@@ -139,7 +139,7 @@ struct ap_f {
 
 constexpr auto ap = multary(ap_f{});
 // FIXME: Should be definable by this equation:
-//constexpr auto ap = zip(identity);
+//constexpr auto ap = zip(invoke);
 
 struct foldl_f {
   template<class F, class X, class Tuple, class I, I A>

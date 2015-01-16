@@ -20,13 +20,6 @@ constexpr struct identity_f {
   constexpr X operator() (X&& x) const {
     return std::forward<X>(x);
   }
-
-  template<class F, class X, class...Y>
-  constexpr auto operator() (F&& f, X&& x, Y&&...y) const
-    -> std::result_of_t<F(X,Y...)>
-  {
-    return std::forward<F>(f)(std::forward<X>(x), std::forward<Y>(y)...);
-  }
 } identity{};
 
 constexpr struct invoke_f {
