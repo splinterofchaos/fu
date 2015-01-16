@@ -53,7 +53,7 @@ constexpr auto gcd = fu::multary(gcd_impl);
 constexpr auto gcd5 = gcd(5);
 constexpr int five = gcd5(10);  // five == gcd(5, 10)
 ```
-One might note that `gcd` is an associative operation; `gcd(gcd(x, y), z) == gcd(x, gcd(y, z))`. `fu::lassoc`  (implying "left associativity") allows it to work on an arbitrary number of arguments.
+One might note that `gcd` is an associative operation; `gcd(x, y, z) == gcd(x, gcd(y, z))`. `fu::lassoc`  (implying "left associativity") allows it to work on an arbitrary number of arguments.
 ```c++
 constexpr auto gcd = fu::lassoc(fu::multary(gcd_impl));
 constexpr int five = gcd(5, 10, 15, 20);
