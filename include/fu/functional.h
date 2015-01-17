@@ -33,7 +33,7 @@ constexpr struct pipe_f {
   constexpr auto operator() (X&& x, F&& f, G&&...g) const 
     -> std::result_of_t<pipe_f(std::result_of_t<F(X)>, G...)>
   {
-    return (*this)(std::forward<F>(f)(std::forward<X>(x)),
+    return (*this)(invoke(std::forward<F>(f), std::forward<X>(x)),
                    std::forward<G>(g)...);
   }
 } pipe{};
@@ -146,8 +146,8 @@ constexpr auto ranked_overload = lassoc(MakeT<RankOverloaded>{});
 
 template<class F, class G>
 struct Composition {
-  ToFunctor<F> f;
-  ToFunctor<G> g;
+  F f;
+  G g;
 
   constexpr Composition(F f, G g) : f(std::move(f))
                                   , g(std::move(g))
@@ -215,7 +215,7 @@ constexpr auto compose = pipe(MakeT<Composition>{}, multary, lassoc);
 
 template<template<class...>class Enabler, class F>
 struct Enabled_f {
-  ToFunctor<F> f;
+  F f;
 
   constexpr Enabled_f(F f) : f(std::move(f)) { }
 
@@ -223,9 +223,9 @@ struct Enabled_f {
   // complains.
   template<class X, class = enable_if_t<Enabler<X>::value>>
   constexpr auto operator() (X&& x) const
-    -> decltype(f(std::declval<X>()))
+    -> std::result_of_t<const F&(X&&)>
   {
-    return f(std::forward<X>(x));
+    return invoke(f, std::forward<X>(x));
   }
 };
 

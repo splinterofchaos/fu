@@ -41,7 +41,7 @@ template<size_t i, class F, class...Tuple>
 constexpr auto applyI(F&& f, Tuple&&...t)
   -> std::result_of_t<F(Elem<Tuple, i>...)>
 {
-  return f(std::get<i>(t)...);
+  return invoke(f, std::get<i>(t)...);
 }
 
 template<size_t i>
@@ -145,7 +145,9 @@ struct foldl_f {
   template<class F, class X, class Tuple, class I, I A>
   constexpr decltype(auto) operator() (const F& f, X&& acc, Tuple&& t,
                                        std::integer_sequence<I, A>) const {
-    return f(std::forward<X>(acc), std::get<A>(std::forward<Tuple>(t)));
+    return invoke(f,
+                  std::forward<X>(acc),
+                  std::get<A>(std::forward<Tuple>(t)));
   }
 
   template<class F, class X, class Tuple, class I, I A, I...N,
@@ -154,8 +156,9 @@ struct foldl_f {
                                        std::integer_sequence<I, A, N...>) const
   {
     return (*this)(f,
-                   f(std::forward<X>(acc),
-                     std::get<A>(std::forward<Tuple>(t))),
+                   invoke(f,
+                          std::forward<X>(acc),
+                          std::get<A>(std::forward<Tuple>(t))),
                    std::forward<Tuple>(t),
                    std::integer_sequence<I, N...>{});
   }
@@ -181,16 +184,19 @@ struct foldr_f {
   template<class F, class X, class Tuple, class I, I A>
   constexpr decltype(auto) operator() (const F& f, X&& acc, Tuple&& t,
                                  std::integer_sequence<I, A>) const {
-    return f(std::forward<X>(acc), std::get<A>(std::forward<Tuple>(t)));
+    return invoke(f,
+                  std::forward<X>(acc),
+                  std::get<A>(std::forward<Tuple>(t)));
   }
 
   template<class F, class X, class Tuple, class I, I A, I...N,
            class = std::enable_if_t<(sizeof...(N) > 0)>>
   constexpr decltype(auto) operator() (const F& f, X&& acc, Tuple&& t,
                                  std::integer_sequence<I, A, N...>) const {
-    return f((*this)(f, std::forward<X>(acc), std::forward<Tuple>(t),
-                     std::integer_sequence<I, N...>{}),
-             std::get<A>(std::forward<Tuple>(t)));
+    return invoke(f,
+                  (*this)(f, std::forward<X>(acc), std::forward<Tuple>(t),
+                          std::integer_sequence<I, N...>{}),
+                  std::get<A>(std::forward<Tuple>(t)));
   }
 
   /// foldr(f, x, {a,b,c}) = f(f(f(x,c), b), a)
