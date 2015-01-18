@@ -5,6 +5,8 @@
 #include <functional>
 
 #include <fu/iseq.h>
+#include <fu/make/make.h>
+#include <fu/tuple/basic.h>
 
 /// This file includes the basic functionality used to build other modules.
 
@@ -62,48 +64,6 @@ constexpr struct invoke_f {
     return std::forward<O>(o)->*std::forward<F>(f);
   }
 } invoke{};
-
-/// A type-class maker.
-/// Ex:
-///   std::make_pair  <=> MakeT<std::pair>{};
-///   std::make_tuple <=> MakeT<std::tuple>{};
-template<template<class...> class T> struct MakeT {
-  /// Performs basic type transformations.
-  template<class X>
-  struct Ty { using type = X; };
-
-  /// Converts reference wrappers to references.
-  template<class X>
-  struct Ty<std::reference_wrapper<X>> { using type = X&; };
-
-  template<class X>
-  using Ty_t = typename Ty<std::decay_t<X>>::type;
-
-  template<class ...X, class R = T<Ty_t<X>...>>
-  constexpr R operator() (X&& ...x) const {
-    return R(std::forward<X>(x)...);
-  }
-};
-
-/// Like MakeT, but using references, like std::tie.
-///
-/// Ex: TieT<std::tuple>{} <=> std::tie
-template<template<class...> class T> struct TieT {
-  template<class ...X, class R = T<X&...>>
-  constexpr R operator() ( X& ...x ) const {
-    return R(x...);
-  }
-};
-
-/// Like TieT, but using perfect forwarding.
-///
-/// Ex: ForwardT<std::tuple>{} <=> std::forward_as_tuple
-template<template<class...> class T> struct ForwardT {
-  template<class ...X>
-  constexpr T<X...> operator() ( X&& ...x ) const {
-    return T<X...>(std::forward<X>(x)...);
-  }
-};
 
 /// Forwarder -- A function type-erasure.
 ///
@@ -206,49 +166,6 @@ constexpr auto to_functor(T O::*f) { return mem_fn(f); }
 /// Makes a function-object type out of `F`.
 template<class F>
 using ToFunctor = decltype(to_functor(std::declval<F>()));
-
-namespace tpl {
-  /// apply(f, {x...}) = f(x...)
-  constexpr struct apply_f {
-    template<size_t i, class Tuple>
-    using Elem = decltype(std::get<i>(std::declval<Tuple>()));
-
-    template<class F, class Tuple, class I, I...N>
-    constexpr auto operator() (const F& f, Tuple&& t,
-                               std::integer_sequence<I, N...>) const
-      -> std::result_of_t<F(Elem<N,Tuple>...)>
-    {
-      return f(std::get<N>(std::forward<Tuple>(t))...);
-    }
-
-    template<class F, class Tuple>
-    constexpr auto operator() (const F& f, Tuple&& t) const
-      -> decltype((*this)(f, std::forward<Tuple>(t), iseq::make(t)))
-    {
-      return (*this)(f, std::forward<Tuple>(t), iseq::make(t));
-    }
-
-    // Since apply_f is used to define generic partial application, it must
-    // define the partial application of itself with a single function.
-    template<class F>
-    struct apply_1_f {
-      F f;
-      constexpr apply_1_f(F f) : f(std::move(f)) { }
-
-      template<class Tuple>
-      constexpr auto operator() (Tuple&& t) const
-        -> std::result_of_t<apply_f(F, Tuple)>
-      {
-        return apply_f{}(f, std::forward<Tuple>(t));
-      }
-    };
-
-    template<class F>
-    constexpr apply_1_f<F> operator() (F f) const {
-      return {std::move(f)};
-    }
-  } apply{};
-} // namespace tpl
 
 /// Partial Application
 template<class F, class...X>

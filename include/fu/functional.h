@@ -7,7 +7,6 @@
 #include <functional>
 
 #include <fu/basic.h>
-#include <fu/tuple.h>
 
 namespace fu {
 

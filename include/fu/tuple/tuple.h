@@ -5,19 +5,11 @@
 #include <functional>
 
 #include <fu/basic.h>
+#include <fu/tuple/basic.h>
 #include <fu/iseq.h>
 
 namespace fu {
 namespace tpl {
-
-/// Constructs a tuple, similar to std::make_tuple.
-constexpr auto tuple = fu::MakeT<std::tuple>{};
-
-/// Constructs a tuple of references, similar to std::tie.
-constexpr auto tie = fu::TieT<std::tuple>{};
-
-/// Constructs a tuple, similar to std::forward_as_tuple.
-constexpr auto forward_tuple = fu::ForwardT<std::tuple>{};
 
 template<class...X>
 constexpr size_t size(const std::tuple<X...>&) {
