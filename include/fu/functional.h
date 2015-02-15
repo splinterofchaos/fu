@@ -212,6 +212,34 @@ constexpr auto ucompose = pipe(MakeT<UComposition>{}, multary, lassoc);
 /// compose(f,g)({x...}, {y...}) = f(g(x...), y...)
 constexpr auto compose = pipe(MakeT<Composition>{}, multary, lassoc);
 
+struct proj_f {
+  template<class F, class ProjF, class...X,
+           class = enable_if_t<(sizeof...(X) > 0)>>
+  constexpr auto operator() (F&& f, const ProjF& pf, X&&...x) const &
+    -> std::result_of_t<F(std::result_of_t<const ProjF&(X)>...)>
+  {
+    return invoke(std::forward<F>(f),
+                  invoke(pf, std::forward<X>(x))...);
+  }
+};
+
+/// proj(f,pf) -- constructs a projection, p, such that
+///   p(x,y) <=> f(pf(x), pf(y))
+///   p(x)   <=> ucompose(f, pf)(x)
+constexpr auto proj = multary2(proj_f{});
+
+struct _less_helper {
+  template<class X, class Y>
+  constexpr bool operator() (const X& x, const Y& y) const {
+    return x < y;
+  }
+};
+
+/// proj_less(pf, x, y) <=> proj(std::less<>{}, pf, x, y)
+///
+/// Useful for use with <algorithm> functions.
+constexpr auto proj_less = proj(_less_helper{});
+
 template<template<class...>class Enabler, class F>
 struct Enabled_f {
   F f;

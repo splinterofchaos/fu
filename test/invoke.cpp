@@ -49,6 +49,8 @@ constexpr R app1(R(*f)(X), X&& x) {
   return f(std::forward<X>(x));
 }
 
+constexpr int ord(char c) { return c - '0'; }
+
 template<class X, class Y>
 using Same = std::is_same<X,Y>;
 
@@ -82,4 +84,6 @@ int main() {
   static_assert(Same<const int&&, CRVal>::value, "");
   static_assert(Same<PRef, Ref>::value, "");
   static_assert(Same<PCRef, CRef>::value, "");
+
+  static_assert(fu::proj(fu::add, ord, '2', '3') == 5, "");
 } 
