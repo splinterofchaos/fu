@@ -205,6 +205,18 @@ constexpr auto closure = MakeT<Part>{};
 /// Like closure, but forwards its arguments.
 constexpr auto part = ForwardT<Part>{};
 
+/// Specialization for embedded Parts. (Produces better error messages.)
+template<class F, class...X, class...Y>
+struct Part <Part<F,X...>, Y...> : Part<F, X..., Y...> {
+  constexpr Part(Part<F,X...> p1, Y...y)
+    : Part<F, X..., Y...>(tpl::apply(part,
+                                     std::tuple_cat(std::make_tuple(std::move(p1.f)),
+                                                    std::move(p1.t),
+                                                    tpl::forward_tuple(std::forward<Y>(y)...))))
+  {
+  }
+};
+
 /// A function that takes two or more arguments. If given only one argument, it
 /// will return a partial application.
 template<class F>
