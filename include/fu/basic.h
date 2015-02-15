@@ -196,6 +196,7 @@ struct Part {
   }
 };
 
+
 /// Closure: partial application by copying the parameters.
 /// Given f(x,y,z):
 ///   closure(f,x) = g(y,z) = f(x,y,z)
@@ -227,16 +228,16 @@ struct Multary : ToFunctor<F> {
   constexpr Multary(F f) : Fn(std::move(f)) { }
 
   template<class X>
-  using Partial = decltype(closure(std::declval<Multary>(), std::declval<X>()));
+  using Partial = decltype(closure(std::declval<F>(), std::declval<X>()));
 
   template<class X>
   constexpr Partial<X> operator() (X x) const & {
-    return closure(*this, std::move(x));
+    return closure(F(*this), std::move(x));
   }
 
   template<class X>
   constexpr Partial<X> operator() (X x) const && {
-    return closure(std::move(*this), std::move(x));
+    return closure(F(std::move(*this)), std::move(x));
   }
 };
 
@@ -247,19 +248,30 @@ constexpr auto multary = MakeT<Multary>{};
 /// A function that takes three or more arguments. If given only one or two
 /// arguments, it will return a partial application.
 template<class F>
-struct Multary2 : Multary<F> {
-  using Multary<F>::operator();
+struct Multary2 : ToFunctor<F> {
+  using ToFunctor<F>::operator();
 
-  constexpr Multary2(F f) : Multary<F>(std::move(f)) { }
+  constexpr Multary2(F f) : ToFunctor<F>(std::move(f)) { }
+
+  template<class X>
+  constexpr Multary<Part<F, X>> operator() (X x) const & {
+    return multary(closure(F(*this), std::move(x)));
+  }
+
+  template<class X>
+  constexpr Multary<Part<F, X>> operator() (X x) && {
+    return multary(closure(F(std::move(*this)), std::move(x)));
+  }
 
   template<class X, class Y>
   constexpr Part<F, X, Y> operator() (X x, Y y) const & {
-    return closure(*this, std::move(x), std::move(y));
+    return closure(F(*this), std::move(x), std::move(y));
   }
 
   template<class X, class Y>
   constexpr Part<F, X, Y> operator() (X x, Y y) const && {
-    return closure(std::move(*this), std::move(x), std::move(y));
+    return closure(F(std::move(*this)),
+                   std::move(x), std::move(y));
   }
 };
 
