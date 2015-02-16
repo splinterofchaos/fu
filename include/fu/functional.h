@@ -223,10 +223,40 @@ struct proj_f {
   }
 };
 
+struct lproj_f {
+  template<class F, class ProjF, class X, class Y>
+  constexpr auto operator() (F&& f, ProjF&& pf, X&& x, Y&& y) const
+    -> std::result_of_t<F(std::result_of_t<ProjF(X)>, Y)>
+  {
+    return invoke(std::forward<F>(f),
+                  invoke(std::forward<ProjF>(pf),
+                         std::forward<X>(x)),
+                  std::forward<Y>(y));
+  }
+};
+
+struct rproj_f {
+  template<class F, class ProjF, class X, class Y>
+  constexpr auto operator() (F&& f, ProjF&& pf, X&& x, Y&& y) const
+    -> std::result_of_t<F(X, std::result_of_t<ProjF(Y)>)>
+  {
+    return invoke(std::forward<F>(f),
+                  std::forward<X>(x),
+                  invoke(std::forward<ProjF>(pf),
+                         std::forward<Y>(y)));
+  }
+};
+
 /// proj(f,pf) -- constructs a projection, p, such that
 ///   p(x,y) <=> f(pf(x), pf(y))
 ///   p(x)   <=> ucompose(f, pf)(x)
-constexpr auto proj = multary2(proj_f{});
+constexpr auto proj = multary_n<2>(proj_f{});
+
+/// lproj(f, pf, x, y) <=> f(pf(x), y)
+constexpr auto lproj = multary_n<2>(lproj_f{});
+
+/// rproj(f, pf, x, y) <=> f(x, pf(y))
+constexpr auto rproj = multary_n<2>(rproj_f{});
 
 struct _less_helper {
   template<class X, class Y>
@@ -235,10 +265,29 @@ struct _less_helper {
   }
 };
 
-/// proj_less(pf, x, y) <=> proj(std::less<>{}, pf, x, y)
+/// proj_less(pf, x, y) <=> pf(x) < pf(y)
 ///
-/// Useful for use with <algorithm> functions.
+/// Useful for use with <algorithm> sorting/comparing functions.
 constexpr auto proj_less = proj(_less_helper{});
+
+struct join_f {
+  template<class F, class X>
+  using R = std::result_of_t<F(X)>;
+
+  template<class F, class Left, class Right, class X, class Y>
+  constexpr auto operator() (F&& f, Left&& l, Right&& r, X&& x, Y&& y) const
+    -> std::result_of_t<F(R<Left,X>, R<Right,Y>)>
+  {
+    return invoke(std::forward<F>(f),
+                  invoke(std::forward<Left>(l), std::forward<X>(x)),
+                  invoke(std::forward<Right>(r), std::forward<Y>(y)));
+  }
+};
+
+/// join(f,l,r) -- constructs a projection, j, such that
+///   j(x,y) <=> f(l(x), r(y))
+// TODO: multary3?
+constexpr auto join = multary_n<3>(join_f{});
 
 template<template<class...>class Enabler, class F>
 struct Enabled_f {
