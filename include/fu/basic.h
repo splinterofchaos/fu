@@ -218,65 +218,59 @@ struct Part <Part<F,X...>, Y...> : Part<F, X..., Y...> {
   }
 };
 
-/// A function that takes two or more arguments. If given only one argument, it
+/// A function that takes `n` or more arguments. If given only one argument, it
 /// will return a partial application.
+template<size_t n, class F>
+struct multary_n_f : ToFunctor<F> {
+  using ToFunctor<F>::operator();
+
+  constexpr multary_n_f(F f) : ToFunctor<F>(std::move(f)) { }
+
+  // The result of applying this m arguments where m <= n.
+  template<class...X>
+  using Partial = multary_n_f<n - sizeof...(X), Part<F, X...>>;
+
+  template<class...X, class = enable_if_t<(sizeof...(X) <= n)>>
+  constexpr Partial<X...> operator() (X...x) const & {
+    return Partial<X...>(closure(F(*this), std::move(x)...));
+  }
+};
+
 template<class F>
-struct Multary : ToFunctor<F> {
+struct multary_n_f<0, F> : ToFunctor<F> {
   using Fn = ToFunctor<F>;
   using Fn::operator();
 
-  constexpr Multary(F f) : Fn(std::move(f)) { }
+  constexpr multary_n_f(F f) : Fn(std::move(f)) { }
 
   template<class X>
-  using Partial = decltype(closure(std::declval<F>(), std::declval<X>()));
-
-  template<class X>
-  constexpr Partial<X> operator() (X x) const & {
+  constexpr Part<F,X> operator() (X x) const & {
     return closure(F(*this), std::move(x));
   }
 
   template<class X>
-  constexpr Partial<X> operator() (X x) const && {
+  constexpr Part<F,X> operator() (X x) const && {
     return closure(F(std::move(*this)), std::move(x));
   }
 };
 
 /// A function that takes two or more arguments. If given only one argument, it
 /// will return a partial application.
-constexpr auto multary = MakeT<Multary>{};
-
-/// A function that takes three or more arguments. If given only one or two
-/// arguments, it will return a partial application.
-template<class F>
-struct Multary2 : ToFunctor<F> {
-  using ToFunctor<F>::operator();
-
-  constexpr Multary2(F f) : ToFunctor<F>(std::move(f)) { }
-
-  template<class X>
-  constexpr Multary<Part<F, X>> operator() (X x) const & {
-    return multary(closure(F(*this), std::move(x)));
+constexpr struct multary_f {
+  // TODO: Make the n an std::integer_constant so that
+  //       basic_multary = MakeT<multary_n_f>{};
+  //       multary = part(basic_multary, Int<0>{})
+  template<class F>
+  constexpr multary_n_f<0, F> operator() (F f) const {
+    return multary_n_f<0, F>(std::move(f));
   }
-
-  template<class X>
-  constexpr Multary<Part<F, X>> operator() (X x) && {
-    return multary(closure(F(std::move(*this)), std::move(x)));
-  }
-
-  template<class X, class Y>
-  constexpr Part<F, X, Y> operator() (X x, Y y) const & {
-    return closure(F(*this), std::move(x), std::move(y));
-  }
-
-  template<class X, class Y>
-  constexpr Part<F, X, Y> operator() (X x, Y y) const && {
-    return closure(F(std::move(*this)),
-                   std::move(x), std::move(y));
-  }
-};
+} multary{};
 
 /// A function that takes two or more arguments. If given only one argument, it
 /// will return a partial application.
-constexpr auto multary2 = MakeT<Multary2>{};
+template<size_t n, class F>
+constexpr multary_n_f<n, F> multary_n(F f) {
+  return multary_n_f<n, F>(std::move(f));
+}
 
 } // namspace fu
