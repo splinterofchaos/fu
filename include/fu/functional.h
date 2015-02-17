@@ -289,6 +289,23 @@ struct join_f {
 // TODO: multary3?
 constexpr auto join = multary_n<3>(join_f{});
 
+struct split_f {
+  template<class Sig>
+  using R = std::result_of_t<Sig>;
+
+  template<class F, class Left, class Right, class X>
+  constexpr auto operator() (F&& f, Left&& l, Right&& r, X& x) const
+    -> std::result_of_t<F(R<Left(X&)>, R<Right(X&)>)>
+  {
+    return invoke(std::forward<F>(f),
+                  invoke(std::forward<Left>(l), x),
+                  invoke(std::forward<Right>(r), x));
+  }
+};
+
+/// split(f,l,r)(x) <=> f(l(x), r(x))
+constexpr auto split = multary_n<3>(split_f{});
+
 template<template<class...>class Enabler, class F>
 struct Enabled_f {
   F f;
