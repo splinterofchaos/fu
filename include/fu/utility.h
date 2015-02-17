@@ -7,46 +7,45 @@ namespace fu {
 
 /// Decorates a binary operation as multary and left-associative, and with an
 /// identity element.
-template<class F, class X>
-constexpr auto numeric_binary(F f, X identity) {
-  return pipe(overload(f, constant(identity)),
-              multary, lassoc);
+template<class F>
+constexpr auto numeric_binary(F f) {
+  return pipe(std::move(f), multary, lassoc);
 }
 
 
 // Helper to define binary operations with identity elements.
-#define DECL_BIN_OP(name, op, identity)                    \
+#define DECL_BIN_OP(name, op)                              \
   struct name##_f {                                        \
     template<class X, class Y>                             \
     constexpr auto operator() (X&& x, Y&& y) const         \
       -> decltype(std::declval<X>() op std::declval<Y>())  \
     { return std::forward<X>(x) op std::forward<Y>(y); }   \
   };                                                       \
-  constexpr auto name = numeric_binary(name##_f{}, identity);
+  constexpr auto name = numeric_binary(name##_f{});
 
 // Mathematical and arithmetic operators
-DECL_BIN_OP(add,  +, 0);
-DECL_BIN_OP(sub,  -, 0);
-DECL_BIN_OP(mult, *, 1);
-DECL_BIN_OP(div,  /, 1);
-DECL_BIN_OP(rem,  %, 1);
-DECL_BIN_OP(add_eq,  +=, 0);
-DECL_BIN_OP(sub_eq,  -=, 0);
-DECL_BIN_OP(mult_eq, *=, 1);
-DECL_BIN_OP(div_eq,  /=, 1);
-DECL_BIN_OP(rem_eq,  %=, 1);
+DECL_BIN_OP(add,     +);
+DECL_BIN_OP(sub,     -);
+DECL_BIN_OP(mult,    *);
+DECL_BIN_OP(div,     /);
+DECL_BIN_OP(rem,     %);
+DECL_BIN_OP(add_eq,  +=);
+DECL_BIN_OP(sub_eq,  -=);
+DECL_BIN_OP(mult_eq, *=);
+DECL_BIN_OP(div_eq,  /=);
+DECL_BIN_OP(rem_eq,  %=);
 
-DECL_BIN_OP(lshift,    <<,  0);
-DECL_BIN_OP(rshift,    >>,  0);
-DECL_BIN_OP(lshift_eq, <<=, 0);
-DECL_BIN_OP(rshift_eq, >>=, 0);
+DECL_BIN_OP(lshift,    <<);
+DECL_BIN_OP(rshift,    >>);
+DECL_BIN_OP(lshift_eq, <<=);
+DECL_BIN_OP(rshift_eq, >>=);
 
 // Logical operators
-DECL_BIN_OP(or_,      ||, false);
-DECL_BIN_OP(and_,     &&, true);
-DECL_BIN_OP(xor_,     ^,  0);
-DECL_BIN_OP(bit_or,  |,  false);
-DECL_BIN_OP(xor_eq_,     ^=,  0);
+DECL_BIN_OP(or_,      ||);
+DECL_BIN_OP(and_,     &&);
+DECL_BIN_OP(xor_,     ^);
+DECL_BIN_OP(bit_or,   |);
+DECL_BIN_OP(xor_eq_,  ^=);
 
 // TODO: Why does the macro fail on bit_and?
 //DECl_BIN_OP(bit_and, &,  true);
@@ -58,7 +57,7 @@ struct bit_and_f {
     return std::forward<X>(x) & std::forward<Y>(y);
   }
 };
-constexpr auto bit_and = numeric_binary(bit_and_f{}, 0);
+constexpr auto bit_and = numeric_binary(bit_and_f{});
 
 // Helper to define binary relations.
 #define DECL_REL_OP(name, op)                              \
