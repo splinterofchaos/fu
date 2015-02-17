@@ -222,22 +222,30 @@ struct Part <Part<F,X...>, Y...> : Part<F, X..., Y...> {
 /// will return a partial application.
 template<size_t n, class F>
 struct multary_n_f : ToFunctor<F> {
-  using ToFunctor<F>::operator();
-
   constexpr multary_n_f(F f) : ToFunctor<F>(std::move(f)) { }
 
   // The result of applying this m arguments where m <= n.
   template<class...X>
   using Partial = multary_n_f<n - sizeof...(X), Part<F, X...>>;
 
+  /// Too few arguments: Return another multary function.
   template<class...X, class = enable_if_t<(sizeof...(X) < n)>>
   constexpr Partial<X...> operator() (X...x) const & {
     return Partial<X...>(closure(F(*this), std::move(x)...));
   }
 
-  template<class...X, class = enable_if_t<(sizeof...(X) >= n)>>
+  /// Exactly n arguments: Partially apply.
+  template<class...X, class = enable_if_t<(sizeof...(X) == n)>>
   constexpr Part<F, X...> operator() (X...x) const & {
     return closure(F(*this), std::move(x)...);
+  }
+
+  /// More than n arguments: invoke.
+  template<class...X, class = enable_if_t<(sizeof...(X) > n)>>
+  constexpr auto operator() (X&&...x) const &
+    -> std::result_of_t<const F&(X...)>
+  {
+    return static_cast<const F&>(*this)(std::forward<X>(x)...);
   }
 };
 
