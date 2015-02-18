@@ -15,11 +15,11 @@ constexpr struct apply_f {
   using Elem = decltype(std::get<i>(std::declval<Tuple>()));
 
   template<class F, class Tuple, class I, I...N>
-  constexpr auto operator() (const F& f, Tuple&& t,
+  constexpr auto operator() (F&& f, Tuple&& t,
                              std::integer_sequence<I, N...>) const
-    -> std::result_of_t<F(Elem<N,Tuple>...)>
+    -> std::result_of_t<F&&(Elem<N,Tuple>...)>
   {
-    return f(std::get<N>(std::forward<Tuple>(t))...);
+    return std::forward<F>(f)(std::get<N>(std::forward<Tuple>(t))...);
   }
 
   template<class F, class Tuple>
