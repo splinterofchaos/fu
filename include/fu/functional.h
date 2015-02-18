@@ -37,54 +37,56 @@ constexpr struct pipe_f {
   }
 } pipe{};
 
-/// Left-associative application.
-template<class F>
-struct LAssoc : ToFunctor<F> {
-  using ToFunctor<F>::operator();
+struct lassoc_f {
+  template<class F, class X>
+  constexpr X&& operator() (const F&, X&& x) const {
+    return std::forward<X>(x);
+  }
 
-  constexpr LAssoc(F f) : ToFunctor<F>(std::move(f)) { }
-
-  template<class X, class Y>
-  using R = std::result_of_t<F(X, Y)>;
-
-  template<class X, class Y, class...Z
-          ,class = std::enable_if_t<(sizeof...(Z) > 0)>>
-  constexpr auto operator() (X&& x, Y&& y, Z&&...z) const
-    -> std::result_of_t<LAssoc(R<X,Y>, Z...)>
+  template<class F, class X, class Y>
+  constexpr auto operator() (F&& f, X&& x, Y&& y) const
+    -> std::result_of_t<F(X,Y)>
   {
-    return (*this)((*this)(std::forward<X>(x), std::forward<Y>(y)),
+    return invoke(std::forward<F>(f), std::forward<X>(x), std::forward<Y>(y));
+  }
+
+  template<class F, class X, class Y, class...Z,
+           class = enable_if_t<(sizeof...(Z) > 0)>>
+  constexpr auto operator() (const F& f, X&& x, Y&& y, Z&&...z) const {
+    return (*this)(f,
+                   invoke(f, std::forward<X>(x), std::forward<Y>(y)),
                    std::forward<Z>(z)...);
   }
 };
 
 /// Right-associative application.
-template<class F>
-struct RAssoc : ToFunctor<F> {
-  using ToFunctor<F>::operator();
-
-  constexpr RAssoc(F f) : ToFunctor<F>(std::move(f)) { }
-
-  template<class X, class Y>
-  using R = std::result_of_t<F(X, Y)>;
-
-  template<class X, class...Y
-          ,class = std::enable_if_t<(sizeof...(Y) > 1)>>
-  constexpr auto operator() (X&& x, Y&&...y) const
-    -> R<X, std::result_of_t<RAssoc(Y...)>>
+struct rassoc_f {
+  template<class F, class X, class Y>
+  constexpr auto operator() (F&& f, X&& x, Y&& y) const
+    -> std::result_of_t<F(X,Y)>
   {
-    return (*this)(std::forward<X>(x), (*this)(std::forward<Y>(y)...));
+    return invoke(std::forward<F>(f), std::forward<X>(x), std::forward<Y>(y));
+  }
+
+  template<class F, class X, class...Y
+          ,class = std::enable_if_t<(sizeof...(Y) > 1)>>
+  constexpr auto operator() (const F& f, X&& x, Y&&...y) const
+    -> std::result_of_t<F(X, std::result_of_t<rassoc_f(F,Y...)>)>
+  {
+    return invoke(f, std::forward<X>(x),
+                  (*this)(f, std::forward<Y>(y)...));
   }
 };
 
 /// Left-associative application.
 ///
 /// Ex: lassoc(+)(1,2,3) = (1+2) + 3
-constexpr auto lassoc = MakeT<LAssoc>{};
+constexpr auto lassoc = multary(lassoc_f{});
 
 /// Right-associative application.
 ///
 /// Ex: rassoc(+)(1,2,3) = 1 + (2+3)
-constexpr auto rassoc = MakeT<RAssoc>{};
+constexpr auto rassoc = multary(rassoc_f{});
 
 /// A function object that lifts C++ overloading rules to a type class.
 template<class F, class G>
