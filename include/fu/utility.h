@@ -60,6 +60,11 @@ struct bit_and_f {
 };
 constexpr auto bit_and = numeric_binary(bit_and_f{});
 
+template<class Binary, class Join = and__f>
+constexpr auto numeric_relational(Binary b, Join j = Join{}) {
+  return multary(transitive(b, j));
+}
+
 // Helper to define binary relations.
 #define DECL_REL_OP(name, op)                              \
   struct name##_f {                                        \
@@ -68,7 +73,7 @@ constexpr auto bit_and = numeric_binary(bit_and_f{});
       -> decltype(std::declval<X>() op std::declval<Y>())  \
     { return std::forward<X>(x) op std::forward<Y>(y); }   \
   };                                                       \
-  constexpr auto name = multary(name##_f{});
+  constexpr auto name = numeric_relational(name##_f{});
 
 // Relational operators
 DECL_REL_OP(less,       <);

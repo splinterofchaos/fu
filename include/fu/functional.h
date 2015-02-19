@@ -83,6 +83,35 @@ constexpr auto lassoc = multary(lassoc_f{});
 /// Ex: rassoc(+)(1,2,3) = 1 + (2+3)
 constexpr auto rassoc = multary(rassoc_f{});
 
+struct transitive_f {
+  /// trans(b,j,x,y) = b(x,y)
+  template<class Binary, class Join, class X, class Y>
+  constexpr auto operator() (Binary&& b, const Join&, X&& x, Y&& y) const {
+    return fu::invoke(std::forward<Binary>(b),
+                      std::forward<X>(x), std::forward<Y>(y));
+  }
+
+  /// trans(b,j,x,y,z...) = j(b(x,y), b(y,z...))
+  template<class Binary, class Join, class X, class Y, class...Z,
+           class = enable_if_t<(sizeof...(Z) > 0)>>
+  constexpr auto operator() (const Binary& b, const Join& j,
+                             X&& x, const Y& y, Z&&...z) const
+  {
+    return fu::invoke(j,
+                      fu::invoke(b, std::forward<X>(x), y),
+                      (*this)(b, j, y, std::forward<Z>(z)...));
+  }
+};
+
+/// transitive(b,j) -- produces a function, t, such that
+///   t(x,y)    <=>  b(x,y)
+///   t(x,y,z)  <=>  j(b(x,y), b(y,z))
+///
+/// Ex: t = transitive(<, &&)
+///   t(x,y)    ==  x < y
+///   t(x,y,z)  ==  x < y && y < z
+constexpr auto transitive = multary_n<2>(transitive_f{});
+
 /// A function object that lifts C++ overloading rules to a type class.
 template<class F, class G>
 struct Overloaded : public ToFunctor<F>, public ToFunctor<G> {
