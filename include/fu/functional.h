@@ -38,11 +38,6 @@ constexpr struct pipe_f {
 } pipe{};
 
 struct lassoc_f {
-  template<class F, class X>
-  constexpr X&& operator() (const F&, X&& x) const {
-    return std::forward<X>(x);
-  }
-
   template<class F, class X, class Y>
   constexpr auto operator() (F&& f, X&& x, Y&& y) const
     -> std::result_of_t<F(X,Y)>
