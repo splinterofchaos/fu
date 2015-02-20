@@ -271,9 +271,32 @@ constexpr struct multary_f {
 
 /// A function that takes two or more arguments. If given only one argument, it
 /// will return a partial application.
+#ifdef __clang__
+// For clang, experimentally define multary_n<n> as a template variable. GCC
+// earlier than version 5 still cannot handle them.
+template<size_t n>
+struct make_multary_n_f {
+  template<class F>
+  constexpr auto operator() (F f) const -> multary_n_f<n, F>
+  {
+    return {std::move(f)};
+  }
+
+  template<class F>
+  constexpr auto operator() (std::reference_wrapper<F> f) const
+    -> multary_n_f<n, F&>
+  {
+    return {std::move(f)};
+  }
+};
+
+template<size_t n>
+constexpr auto multary_n = make_multary_n_f<n>{};
+#else
 template<size_t n, class F>
 constexpr multary_n_f<n, F> multary_n(F f) {
   return multary_n_f<n, F>(std::move(f));
 }
+#endif  // __clang__
 
 } // namspace fu

@@ -32,4 +32,10 @@ int main() {
   using fu::tpl::tuple;
   static_assert(f(tuple(1,1), tuple(1,1)) == 3, "");
   static_assert(f(tuple(2,2), tuple(1,1)) == 4, "");
+
+#ifdef __clang__
+  // Assert that multary_n<n> can be passed to higher order functions.
+  constexpr auto _add3 = fu::pipe(add3, fu::multary_n<2>);
+  static_assert(_add3(1)(1)(1) == 3, "");
+#endif
 }
