@@ -25,7 +25,6 @@ Not only must we explicitely specify the type of `print`'s arguments to avoid am
 ```c++
 #include <algorithm>
 #include <iostream>
-g
 #include <fu/utility.h>
 
 auto print = fu::lshift(std::ref(std::cout));
