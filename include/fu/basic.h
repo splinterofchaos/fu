@@ -220,9 +220,11 @@ struct Part <Part<F,X...>, Y...> : Part<F, X..., Y...> {
 
 /// A function that takes `n` or more arguments. If given only one argument, it
 /// will return a partial application.
-template<size_t n, class F>
-struct multary_n_f : ToFunctor<F> {
-  constexpr multary_n_f(F f) : ToFunctor<F>(std::move(f)) { }
+template<size_t n, class _F>
+struct multary_n_f : ToFunctor<_F> {
+  using F = ToFunctor<_F>;
+
+  constexpr multary_n_f(F f) : F(std::move(f)) { }
 
   // The result of applying this m arguments where m <= n.
   template<class...X>
