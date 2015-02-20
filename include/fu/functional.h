@@ -169,37 +169,22 @@ struct RankOverloaded {
 /// preferring the first over the last.
 constexpr auto ranked_overload = lassoc(MakeT<RankOverloaded>{});
 
-template<class F, class G>
-struct Composition {
-  F f;
-  G g;
+struct compose_f {
+  /// Applies the inner function; returns a tuple so that it can be
+  /// concatenated with the arguments for the outer function.
+  template<class G, class Tuple>
+  static constexpr decltype(auto) app1(G&& g, Tuple&& t) {
+    return tpl::forward_tuple(tpl::apply(std::forward<G>(g),
+                                         std::forward<Tuple>(t)));
+  }
 
-  constexpr Composition(F f, G g) : f(std::move(f))
-                                  , g(std::move(g))
+  template<class F, class G, class TupleA, class TupleB>
+  constexpr auto operator() (F&& f, G&& g, TupleA&& a, TupleB&& b) const
+    -> decltype(auto)
   {
-  }
-
-  template<class Tuple>
-  constexpr decltype(auto) app1(Tuple t) const & {
-    return tpl::forward_tuple(tpl::apply(g, std::forward<Tuple>(t)));
-  }
-
-  template<class Tuple>
-  constexpr decltype(auto) app1(Tuple t) const && {
-    return tpl::forward_tuple(tpl::apply(std::move(g), std::forward<Tuple>(t)));
-  }
-
-  template<class TupleA, class TupleB>
-  constexpr decltype(auto) operator() (TupleA&& a, TupleB&& b) const & {
-    return tpl::apply(f,
-                      std::tuple_cat(app1(std::forward<TupleB>(b)),
-                                     std::forward<TupleB>(b)));
-  }
-
-  template<class TupleA, class TupleB>
-  constexpr decltype(auto) operator() (TupleA&& a, TupleB&& b) const && {
-    return tpl::apply(std::move(f),
-                      std::tuple_cat(app1(std::forward<TupleB>(b)),
+    return tpl::apply(std::forward<F>(f),
+                      std::tuple_cat(app1(std::forward<G>(g),
+                                          std::forward<TupleA>(a)),
                                      std::forward<TupleB>(b)));
   }
 };
@@ -209,34 +194,23 @@ struct Composition {
 /// Lemma:
 ///   (f . g)(x) = f(g(x))
 ///   (f . g)(x,y,z) = f(g(x), y, z)
-template<class F, class G>
-struct UComposition : Composition<F,G> {
-  using base = Composition<F,G>;
-
-  constexpr UComposition(F f, G g) : base(std::move(f), std::move(g))
-  {
-  }
-
-  template<class X, class...Y>
-  constexpr decltype(auto) operator() (X &&x, Y&&...y) const & {
-    return (*this)(tpl::forward_tuple(std::forward<X>(x)),
-                   tpl::forward_tuple(std::forward<Y>(y)...));
-  }
-
-  template<class X, class...Y>
-  constexpr decltype(auto) operator() (X &&x, Y&&...y) const && {
-    return (*this)(tpl::forward_tuple(std::forward<X>(x)),
-                   tpl::forward_tuple(std::forward<Y>(y)...));
+struct ucompose_f {
+  template<class F, class G, class X, class...Y>
+  constexpr decltype(auto) operator() (F&& f, G&& g, X &&x, Y&&...y) const {
+    return fu::invoke(std::forward<F>(f),
+                      fu::invoke(std::forward<G>(g), std::forward<X>(x)),
+                      std::forward<Y>(y)...);
   }
 };
 
 /// Creates a unary composition: ucompose(f,g)(x) = f(g(x))
-constexpr auto ucompose = pipe(MakeT<UComposition>{}, multary, lassoc);
+constexpr auto ucompose = lassoc(multary_n<2>(ucompose_f{}));
 
 /// Creates a generic composition.
 ///
 /// compose(f,g)({x...}, {y...}) = f(g(x...), y...)
-constexpr auto compose = pipe(MakeT<Composition>{}, multary, lassoc);
+constexpr auto compose = multary_n<2>(compose_f{});
+// FIXME: Should be `lassoc`, but the current definition won't work.
 
 struct proj_f {
   template<class F, class ProjF, class...X,
