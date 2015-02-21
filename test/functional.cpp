@@ -1,14 +1,6 @@
 
 #include <cassert>
-#include "fu/functional.h"
-#include "fu/tuple.h"
-
-// TODO: define this in "fu/utility.h"
-constexpr struct inc_f {
-  constexpr int operator() (int x) const {
-    return x+1;
-  }
-} inc{};
+#include "fu/fu.h"
 
 constexpr int add3(int x, int y, int z) {
   return x + y + z;
@@ -25,6 +17,7 @@ int main() {
 #else
 # define ASSERT(expr) assert(expr)
 #endif
+  using fu::inc;
   ASSERT((fu::ucompose(inc,inc,inc,inc)(1) == 5));
 
   constexpr auto f = fu::compose(add3, add_half);

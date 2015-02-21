@@ -102,4 +102,32 @@ DECL_UNARY(addr,  &);  // TODO: Use std::address_of().
 #undef DECL_REL_OP
 #undef DECL_UNARY
 
+constexpr auto inc = add(1);
+
+/// inc, but modifies its argument; returns a reference.
+constexpr struct pre_inc_f {
+  template<class Number> Number& operator() (Number& n) const {
+    return ++n;
+  }
+} pre_inc{};
+
+constexpr struct pre_dec_f {
+  template<class Number> Number& operator() (Number& n) const {
+    return --n;
+  }
+} pre_dec{};
+
+/// inc, but modifies its argument; returns the previous value.
+constexpr struct post_inc_f {
+  template<class Number> Number operator() (Number& n) const {
+    return n++;
+  }
+} post_inc{};
+
+constexpr struct post_dec_f {
+  template<class Number> Number operator() (Number& n) const {
+    return n--;
+  }
+} post_dec{};
+
 } // namespace fu
