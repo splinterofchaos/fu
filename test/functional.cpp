@@ -10,15 +10,28 @@ constexpr int add_half(int x, int y) {
   return (x + y) / 2;
 }
 
+constexpr struct unfixed_pow2_f {
+  template<class Rec>
+#ifndef __clang__
+  constexpr
+#endif
+  std::size_t operator() (Rec r, std::size_t x) const {
+    return x ? 2 * r(x-1) : 1;
+  }
+} unfixed_pow2{};
+
 int main() {
-  // FIXME: gcc cannot evaluate this test as constexpr, although clang can.
+  // FIXME: gcc cannot evaluate some tests as constexpr, although clang can,
+  // and it's vice versa for other tests.
 #ifdef __clang__
-# define ASSERT(expr) static_assert(expr, "")
+# define CLANG_STATIC_ASSERT(expr) static_assert(expr, "")
+# define GCC_STATIC_ASSERT(expr) assert(expr)
 #else
-# define ASSERT(expr) assert(expr)
+# define CLANG_STATIC_ASSERT(expr) assert(expr)
+# define GCC_STATIC_ASSERT(expr) static_assert(expr, "")
 #endif
   using fu::inc;
-  ASSERT((fu::ucompose(inc,inc,inc,inc)(1) == 5));
+  CLANG_STATIC_ASSERT((fu::ucompose(inc,inc,inc,inc)(1) == 5));
 
   constexpr auto f = fu::compose(add3, add_half);
 
@@ -31,4 +44,10 @@ int main() {
   constexpr auto _add3 = fu::pipe(add3, fu::multary_n<2>);
   static_assert(_add3(1)(1)(1) == 3, "");
 #endif
+
+  constexpr auto pow2 = fu::fix(unfixed_pow2);
+  GCC_STATIC_ASSERT(pow2(0) == 1);
+  GCC_STATIC_ASSERT(pow2(1) == 2);
+  GCC_STATIC_ASSERT(pow2(2) == 4);
+  GCC_STATIC_ASSERT(pow2(3) == 8);
 }

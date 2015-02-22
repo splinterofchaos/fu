@@ -206,6 +206,38 @@ struct ucompose_f {
 /// Creates a unary composition: ucompose(f,g)(x) = f(g(x))
 constexpr auto ucompose = lassoc(multary_n<2>(ucompose_f{}));
 
+struct fix_f {
+  template<class F>
+  constexpr auto rec(const F& f) const {
+    return part(fix_f{}, f);
+  }
+
+  template<class F, class...X>
+#ifndef __clang__
+  constexpr
+#endif
+  decltype(auto) operator() (const F& f, X&&...x) const
+  {
+    return f(rec(f), std::forward<X>(x)...);
+  }
+};
+
+/// Fixed-point combinator: fix(f,x) <=> f(fix(f), x)
+/// http://en.wikipedia.org/wiki/Fixed-point_combinator
+///
+/// Allows one to define a recursive function without referring to itself.
+/// `f` must accept a function as its first argument and call that function
+/// in order to recurse. `f` must not use `auto` as the return type to
+/// prevent "use of f before deduction of auto" errors. Due to a bug in
+/// clang (http://llvm.org/bugs/show_bug.cgi?id=20090), `f` may not be
+/// marked `constexpr`.
+///
+/// Ex:
+///   constexpr int pow2 = fix([](auto rec, int x) -> int {
+///     return x ? 2 * rec(x-1) : 1;
+///   });
+constexpr auto fix = multary(fix_f{});
+
 /// Creates a generic composition.
 ///
 /// compose(f,g)({x...}, {y...}) = f(g(x...), y...)

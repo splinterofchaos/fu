@@ -114,6 +114,25 @@ ro(1);                        // prints "1"
 ro(std::vector<int>{1,2,3});  // prints "123"
 ```
 
+## fix(f)
+
+`fix(f)` can be used to define a recursive function without having it
+refer to itself using a concept called "[fixed point combinator](http://llvm.org/bugs/show_bug.cgi?id=20090)". This can be useful for lambdas, which may not be referred to in the statement that declares them.
+
+
+Note that due to a [bug in clang](http://llvm.org/bugs/show_bug.cgi?id=20090), the result of `f` may not be constexpr. 
+```c++
+constexpr auto pow2 = fix([](auto rec, int x) -> int {
+  return x ? 2 * rec(x-1) : 1;
+});
+pow2(1);  // returns 2
+pow2(3);  // returns 8
+
+constexpr auto fact = fix([](auto rec, int x) -> int {
+  return x > 2 ? x * rec(x-1) : x;
+});
+```
+
 ## compose(f,g) and ucompose(f,g)
 
 Many useful forms of composition exist, but `compose(f,g)` is the most general.
