@@ -4,6 +4,7 @@
 #include <tuple>
 
 #include <fu/iseq.h>
+#include <fu/invoke.h>
 #include <fu/make/make.h>
 
 namespace fu {
@@ -15,16 +16,15 @@ constexpr struct apply_f {
   using Elem = decltype(std::get<i>(std::declval<Tuple>()));
 
   template<class F, class Tuple, class I, I...N>
-  constexpr auto operator() (F&& f, Tuple&& t,
-                             std::integer_sequence<I, N...>) const
-    -> std::result_of_t<F&&(Elem<N,Tuple>...)>
+  constexpr decltype(auto) operator() (F&& f, Tuple&& t,
+                                       std::integer_sequence<I, N...>) const
   {
-    return std::forward<F>(f)(std::get<N>(std::forward<Tuple>(t))...);
+    return fu::invoke(std::forward<F>(f),
+                      std::get<N>(std::forward<Tuple>(t))...);
   }
 
   template<class F, class Tuple>
   constexpr auto operator() (const F& f, Tuple&& t) const
-    -> decltype((*this)(f, std::forward<Tuple>(t), iseq::make(t)))
   {
     return (*this)(f, std::forward<Tuple>(t), iseq::make(t));
   }
@@ -37,9 +37,7 @@ constexpr struct apply_f {
     constexpr apply_1_f(F f) : f(std::move(f)) { }
 
     template<class Tuple>
-    constexpr auto operator() (Tuple&& t) const
-      -> std::result_of_t<apply_f(F, Tuple)>
-    {
+    constexpr decltype(auto) operator() (Tuple&& t) const {
       return apply_f{}(f, std::forward<Tuple>(t));
     }
   };

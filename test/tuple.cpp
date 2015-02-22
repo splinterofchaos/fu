@@ -18,6 +18,12 @@ constexpr struct Add {
   }
 } add{};
 
+struct Int {
+  int x;
+  constexpr Int(int x) : x(x) { }
+  constexpr int times(int y) const { return x * y; }
+};
+
 int main() {
   using namespace fu::tpl;
   constexpr int one = 1;
@@ -37,6 +43,13 @@ int main() {
   static_assert(apply(add, t2) == 7.0, "");
   static_assert(apply(add)(t2) == 7.0, "");
   static_assert(foldl(add, 0, t2) == 7.0, "");
+
+  // TODO: Pull in the GCC_ and CLANG_STATIC_ASSERTs from
+  // test/functional.cpp
+#ifdef __clang__
+  static_assert(apply(&Int::x, tuple(Int{1})) == 1, "");
+  static_assert(apply(&Int::times, tuple(Int{2}, 5)) == 10, "");
+#endif
 
   // These lines cause gcc 4.9 to error and suggest sending a bug report.
   // TODO: Create minimal test case.
