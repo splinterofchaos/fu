@@ -10,6 +10,8 @@ namespace iseq {
 
 // TODO: implement std::index_sequence_for for C++11
 
+template<class I, I i> using Integer = std::integral_constant<I, i>;
+
 template<class...>
 struct IseqOf;
 
@@ -25,6 +27,13 @@ using IseqOf_t = typename IseqOf<typename std::decay<T>::type>::type;
 template<class T, class Iseq = IseqOf_t<T>>
 constexpr Iseq make(const T&) {
   return Iseq{};
+}
+
+template<class I, I M, I...N>
+constexpr auto push(std::integer_sequence<I, N...>, Integer<I, M>)
+  -> std::integer_sequence<I, N..., M>
+{
+  return {};
 }
 
 template<size_t X, class I, I...N,
@@ -56,11 +65,10 @@ constexpr auto take(std::integer_sequence<I, N...> i,
 template<size_t X, class I, I...N, I M, I...Ms,
          class = typename std::enable_if<(X > 0)>::type>
 constexpr auto take(std::integer_sequence<I, N...> i,
-                          std::integer_sequence<I, M, Ms...> j)
-  -> decltype(take<X - 1>(std::integer_sequence<I, N..., M>{}, drop<1>(j)))
+                    std::integer_sequence<I, M, Ms...> j)
 {
   static_assert(X <= sizeof...(Ms) + 1, "Index too high.");
-  return take<X - 1>(std::integer_sequence<I, N..., M>{}, drop<1>(j));
+  return take<X - 1>(push(i, Integer<I,M>{}), drop<1>(j));
 }
 
 template<size_t X, class I, I...N>
