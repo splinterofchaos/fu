@@ -49,6 +49,8 @@ int main() {
 #ifdef __clang__
   static_assert(apply(&Int::x, tuple(Int{1})) == 1, "");
   static_assert(apply(&Int::times, tuple(Int{2}, 5)) == 10, "");
+  constexpr Int two{2};
+  static_assert(apply(&Int::times, tuple(&two, 5)) == 10, "");
 #endif
 
   // These lines cause gcc 4.9 to error and suggest sending a bug report.
