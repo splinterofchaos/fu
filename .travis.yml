@@ -13,3 +13,6 @@ before_install:
   - $CXX -v
 
 script: "./run-tests.sh"
+
+cache: apt
+
