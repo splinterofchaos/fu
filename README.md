@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/splinterofchaos/fu.svg?branch=travis)](https://travis-ci.org/splinterofchaos/fu)
+
 # fu
 Functional Utilities for C++14.
 
