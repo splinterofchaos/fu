@@ -22,9 +22,9 @@ template<template<class...> class T> struct MakeT {
   template<class X>
   using Ty_t = typename Ty<std::decay_t<X>>::type;
 
-  template<class ...X, class R = T<Ty_t<X>...>>
-  constexpr R operator() (X&& ...x) const {
-    return R(std::forward<X>(x)...);
+  template<class ...X>
+  constexpr auto operator() (X&& ...x) const {
+    return T<Ty_t<X>...>(std::forward<X>(x)...);
   }
 };
 
@@ -32,9 +32,9 @@ template<template<class...> class T> struct MakeT {
 ///
 /// Ex: TieT<std::tuple>{} <=> std::tie
 template<template<class...> class T> struct TieT {
-  template<class ...X, class R = T<X&...>>
-  constexpr R operator() ( X& ...x ) const {
-    return R(x...);
+  template<class ...X>
+  constexpr auto operator() ( X& ...x ) const {
+    return T<X&...>(x...);
   }
 };
 
@@ -43,7 +43,7 @@ template<template<class...> class T> struct TieT {
 /// Ex: ForwardT<std::tuple>{} <=> std::forward_as_tuple
 template<template<class...> class T> struct ForwardT {
   template<class ...X>
-  constexpr T<X...> operator() ( X&& ...x ) const {
+  constexpr auto operator() ( X&& ...x ) const {
     return T<X...>(std::forward<X>(x)...);
   }
 };
