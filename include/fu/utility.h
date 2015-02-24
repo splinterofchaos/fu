@@ -9,7 +9,6 @@ namespace fu {
 /// identity element.
 template<class F>
 constexpr auto numeric_binary(F f) {
-  // FIXME: Why does this not work when multary is applied before lassoc?
   return pipe(std::move(f), lassoc, multary);
 }
 
