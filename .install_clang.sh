@@ -6,7 +6,7 @@ sudo apt-get -qq update
 sudo apt-get -qq --force-yes install clang-3.5 libc++-dev
 sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-3.5 1
 
-export CXXFLAGS="-std=c++14 -stdlib=libc++"
+export CXXFLAGS="-std=gnu++14 -stdlib=libc++"
 sudo rm /usr/local/clang-3.4/bin/clang++
 
 svn co --quiet http://llvm.org/svn/llvm-project/libcxx/trunk libcxx

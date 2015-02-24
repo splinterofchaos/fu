@@ -10,9 +10,7 @@ before_install:
   - if [ "$CXX" = "clang++" ]; then ./.install_clang.sh; fi
   - if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.9; fi
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
+  - if [ "$CXX" = "g++" ]; then export CXXFLAGS="-std=c++14"; fi
   - $CXX -v
 
 script: "./run-tests.sh"
-
-cache: apt
-
