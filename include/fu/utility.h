@@ -19,7 +19,7 @@ constexpr auto numeric_binary(F f) {
   struct name##_f {                                        \
     template<class X, class Y>                             \
     constexpr auto operator() (X&& x, Y&& y) const         \
-      -> decltype(std::declval<X>() op std::declval<Y>())  \
+      -> decltype(auto)                                    \
     { return std::forward<X>(x) op std::forward<Y>(y); }   \
   };                                                       \
   constexpr auto name = numeric_binary(name##_f{});
@@ -52,9 +52,7 @@ DECL_BIN_OP(xor_eq_,  ^=);
 //DECl_BIN_OP(bit_and, &,  true);
 struct bit_and_f {
   template<class X, class Y>
-  constexpr auto operator() (X&& x, Y&& y)
-    -> decltype(std::declval<X>(x) & std::declval<Y>(y))
-  {
+  constexpr decltype(auto) operator() (X&& x, Y&& y) const {
     return std::forward<X>(x) & std::forward<Y>(y);
   }
 };
@@ -70,7 +68,7 @@ constexpr auto numeric_relational(Binary b, Join j = Join{}) {
   struct name##_f {                                        \
     template<class X, class Y>                             \
     constexpr auto operator() (X&& x, Y&& y) const         \
-      -> decltype(std::declval<X>() op std::declval<Y>())  \
+      -> decltype(auto)                                    \
     { return std::forward<X>(x) op std::forward<Y>(y); }   \
   };                                                       \
   constexpr auto name = numeric_relational(name##_f{});
@@ -87,8 +85,7 @@ DECL_REL_OP(greater_eq, >=);
 #define DECL_UNARY(name, op)                               \
   constexpr struct name##_f {                              \
     template<class X>                                      \
-    constexpr auto operator() (X&& x) const                \
-      -> decltype(op std::declval<X>())                    \
+    constexpr decltype(auto) operator() (X&& x) const      \
     { return op std::forward<X>(x); }                      \
   } name{};
 
