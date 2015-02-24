@@ -36,9 +36,7 @@ struct Forwarder : public F {
   constexpr Forwarder(F f) : f(std::move(f)) { }
   
   template<class...X>
-  constexpr auto operator() (X&&...x) const
-    -> std::result_of_t<F(X...)>
-  {
+  constexpr decltype(auto) operator() (X&&...x) const {
     return f(std::forward<X>(x)...);
   }
 };
@@ -144,16 +142,38 @@ struct Part {
     return Tuple(std::forward<Y>(y)...);
   }
 
+  // NOTE: due to gcc bug, decltype(auto) may not be used to define operator()
+  // because the wrong overloads will be chosen.
+  // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=64562
+#ifdef __clang__
+# define RESULT(F) decltype(auto)
+#else
+# define RESULT(F) std::result_of_t<F(X..., Y...)>
+#endif
+
   template<class...Y>
-  constexpr std::result_of_t<const F&(X..., Y...)> operator() (Y&&...y) const & {
+  constexpr RESULT(const F&) operator() (Y&&...y) const & {
     return tpl::apply(f, std::tuple_cat(t, args(std::forward<Y>(y)...)));
   }
 
   template<class...Y>
-  constexpr std::result_of_t<F&&(X..., Y...)> operator() (Y&&...y) && {
+  constexpr RESULT(const F&&) operator() (Y&&...y) && {
     return tpl::apply(std::move(f),
                       std::tuple_cat(std::move(t), args(std::forward<Y>(y)...)));
   }
+
+#ifdef __clang__
+  template<class...Y>
+  constexpr RESULT(F&) operator() (Y&&...y) & {
+    return tpl::apply(f, std::tuple_cat(t, args(std::forward<Y>(y)...)));
+  }
+
+  template<class...Y>
+  constexpr RESULT(const F&&) operator() (Y&&...y) const && {
+    return tpl::apply(std::move(f),
+                      std::tuple_cat(std::move(t), args(std::forward<Y>(y)...)));
+  }
+#endif
 };
 
 
@@ -204,8 +224,7 @@ struct multary_n_f : ToFunctor<_F> {
 
   /// More than n arguments: invoke.
   template<class...X, class = enable_if_t<(sizeof...(X) > n)>>
-  constexpr auto operator() (X&&...x) const &
-    -> std::result_of_t<const F&(X...)>
+  constexpr decltype(auto) operator() (X&&...x) const &
   {
     return static_cast<const F&>(*this)(std::forward<X>(x)...);
   }
