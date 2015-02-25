@@ -45,6 +45,16 @@ int main() {
   static_assert(_add3(1)(1)(1) == 3, "");
 #endif
 
+  constexpr auto g = fu::compose_n<2>(add3, add_half);
+  static_assert(g(1,1,1,1) == 3, "");
+  static_assert(g(2,2,1,1) == 4, "");
+
+  static_assert(fu::flip(g)(1,1,2,2) == 4, "");
+  static_assert(fu::flip(g,1,1,2,2) == 4, "");
+
+  static_assert(fu::flip(fu::sub, 5, 10) == 5, "flip(-,5,10) <=> 10 - 5");
+  static_assert(fu::flip(fu::less, 5, 4, 3, 2, 1), "");
+
   constexpr auto pow2 = fu::fix(unfixed_pow2);
   GCC_STATIC_ASSERT(pow2(0) == 1);
   GCC_STATIC_ASSERT(pow2(1) == 2);

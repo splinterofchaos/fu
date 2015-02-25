@@ -353,6 +353,26 @@ struct split_f {
 /// split(f,l,r)(x) <=> f(l(x), r(x))
 constexpr auto split = multary_n<3>(split_f{});
 
+struct flip_f {
+  template<class I, I...i, class F, class...X>
+  static constexpr decltype(auto) reverse(std::integer_sequence<I,i...>,
+                                          F&& f,
+                                          std::tuple<X...> args)
+  {
+    return fu::invoke(std::forward<F>(f),
+                      std::get<sizeof...(X) - i - 1>(std::move(args))...);
+  }
+
+  template<class F, class...X>
+  constexpr decltype(auto) operator() (F&& f, X&&...x) const {
+    return reverse(std::index_sequence_for<X...>{},
+                   std::forward<F>(f),
+                   tpl::forward_tuple(std::forward<X>(x)...));
+  }
+};
+
+constexpr auto flip = multary_n<2>(flip_f{});
+
 template<template<class...>class Enabler, class F>
 struct Enabled_f {
   F f;

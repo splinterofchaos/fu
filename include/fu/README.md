@@ -179,6 +179,16 @@ std::accumulate(first, last, 0, rproj(std::plus<>{}, &std::string::size));
 computes `f(l(x), r(x))`. `join(f,l,r)` takes exactly two arguments, `x` and
 `y`, and computes `f(l(x), r(y))`.
 
+## flip(f)
+
+`flip(f)` reverses the order of arguments applied to `f`.
+```c++
+static_assert(fu::flip(fu::sub)(y,x) == fu::sub(x,y));
+
+auto h(A, B, C, D);
+flip(h, d, c, b, a);  // invokes: h(a,b,c,d)
+```
+
 ## constant(x)
 
 `constant(x)` returns a nullary function (takes no arguments) that always
