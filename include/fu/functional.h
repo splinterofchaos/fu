@@ -57,11 +57,6 @@ struct rassoc_f {
 /// Ex: lassoc(+)(1,2,3) = (1+2) + 3
 constexpr auto lassoc = multary(lassoc_f{});
 
-/// Right-associative application.
-///
-/// Ex: rassoc(+)(1,2,3) = 1 + (2+3)
-constexpr auto rassoc = multary(rassoc_f{});
-
 struct transitive_f {
   /// trans(b,j,x,y) = b(x,y)
   template<class Binary, class Join, class X, class Y>
@@ -350,9 +345,34 @@ constexpr auto flip = multary_n<2>(flip_f{});
 /// pipe(x,f,g) <=> g(f(x))
 /// pipe(x)     <=> x
 constexpr auto pipe = overload(identity, lassoc(flip(invoke)));
+// Informal proof:
+// lassoc(flip(invoke), x, f, g)         =
+//   flip(invoke)(flip(invoke)(x, f), g) =  | definition of lassoc
+//   invoke(g, invoke(f,x)) = g(f(x))       | definition of flip
 
 /// rproj(f, pf, x, y) <=> f(x, pf(y))
-constexpr auto rproj = ucompose(compose_n<2>(flip, lproj), flip);
+constexpr auto rproj = multary_n<2>(ucompose(compose_n<2>(flip, lproj), flip));
+// Informal proof:
+// compose(compose<2>(flip, lproj), flip))(f)(pf)(x, y) =
+//   compose<2>(flip, lproj)(flip(f), pf)(x, y)  =  | definition of compose
+//   flip(lproj(flip(f) pf))(x, y)               =  | definition of compose<2>
+//   lproj(flip(f), pf, y, x)                    =  | definition of flip
+//   flip(f)(pf(y) x) = f(x, pf(y))                 | definition of lproj
+
+/// Right-associative application.
+/// rassoc(f, x, y, z) <=> f(x, f(y,z))
+///
+/// Ex: rassoc(+)(1,2,3) = 1 + (2+3)
+constexpr auto rassoc = ucompose(invoke, flip, lassoc, flip);
+// Informal proof:
+// compose(flip, lassoc, flip)(f)(x,y,z) =
+//  flip(lassoc(flip(f)))(x,y,z) =  | definition of compose
+//  lassoc(flip(f), z, y, x)     =  | definition if flip and invoke
+//  flip(f)(flip(f,z,y), x)      =  | definition of lassoc
+//  f(x, f(y,z))
+//
+// The extra `invoke` is required to make sure `flip . lassoc . flip` doesn't
+// get applied more than one argument.
 
 template<template<class...>class Enabler, class F>
 struct Enabled_f {

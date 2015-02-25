@@ -20,7 +20,16 @@ constexpr struct unfixed_pow2_f {
   }
 } unfixed_pow2{};
 
+constexpr int divide(int x, int y) {
+    return x / y;
+}
+
 int main() {
+  static_assert(fu::rassoc(divide, 10,2) == 10/2, "");
+  static_assert(fu::rassoc(divide, 10,8,4) == 10/(8/4), "");
+  static_assert(fu::rassoc(divide, 10,8,8,2) == 10/(8/(8/2)), "");
+  static_assert(fu::rassoc(divide)(10,8,8,2) == 10/(8/(8/2)), "");
+
   // FIXME: gcc cannot evaluate some tests as constexpr, although clang can,
   // and it's vice versa for other tests.
 #ifdef __clang__
