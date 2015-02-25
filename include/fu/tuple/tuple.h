@@ -18,9 +18,7 @@ constexpr size_t size(const std::tuple<X...>&) {
 
 constexpr struct concat_f {
   template<class...Tuple>
-  constexpr auto operator() (Tuple&&...t) const
-    -> decltype(std::tuple_cat(std::declval<Tuple>()...))
-  {
+  constexpr auto operator() (Tuple&&...t) const {
     return std::tuple_cat(std::forward<Tuple>(t)...);
   }
 } concat{};
@@ -30,18 +28,14 @@ template<class Tuple, size_t I>
 using Elem = decltype(std::get<I>(std::declval<Tuple>()));
 
 template<size_t i, class F, class...Tuple>
-constexpr auto applyI(F&& f, Tuple&&...t)
-  -> std::result_of_t<F(Elem<Tuple, i>...)>
-{
+constexpr auto applyI(F&& f, Tuple&&...t) {
   return invoke(f, std::get<i>(t)...);
 }
 
 template<size_t i>
 struct applyI_f {
   template<class...X>
-  constexpr auto operator() (X&&...x) const
-    -> decltype(applyI<i>(std::declval<X>()...))
-  {
+  constexpr auto operator() (X&&...x) const {
     return applyI<i>(std::forward<X>(x)...);
   }
 };

@@ -29,9 +29,7 @@ constexpr struct pipe_f {
   }
 
   template<class X, class F, class...G>
-  constexpr auto operator() (X&& x, F&& f, G&&...g) const 
-    -> std::result_of_t<pipe_f(std::result_of_t<F(X)>, G...)>
-  {
+  constexpr decltype(auto) operator() (X&& x, F&& f, G&&...g) const {
     return (*this)(invoke(std::forward<F>(f), std::forward<X>(x)),
                    std::forward<G>(g)...);
   }
@@ -39,15 +37,13 @@ constexpr struct pipe_f {
 
 struct lassoc_f {
   template<class F, class X, class Y>
-  constexpr auto operator() (F&& f, X&& x, Y&& y) const
-    -> std::result_of_t<F(X,Y)>
-  {
+  constexpr decltype(auto) operator() (F&& f, X&& x, Y&& y) const {
     return invoke(std::forward<F>(f), std::forward<X>(x), std::forward<Y>(y));
   }
 
   template<class F, class X, class Y, class...Z,
            class = enable_if_t<(sizeof...(Z) > 0)>>
-  constexpr auto operator() (const F& f, X&& x, Y&& y, Z&&...z) const {
+  constexpr decltype(auto) operator() (const F& f, X&& x, Y&& y, Z&&...z) const {
     return (*this)(f,
                    invoke(f, std::forward<X>(x), std::forward<Y>(y)),
                    std::forward<Z>(z)...);
@@ -57,17 +53,13 @@ struct lassoc_f {
 /// Right-associative application.
 struct rassoc_f {
   template<class F, class X, class Y>
-  constexpr auto operator() (F&& f, X&& x, Y&& y) const
-    -> std::result_of_t<F(X,Y)>
-  {
+  constexpr decltype(auto) operator() (F&& f, X&& x, Y&& y) const {
     return invoke(std::forward<F>(f), std::forward<X>(x), std::forward<Y>(y));
   }
 
   template<class F, class X, class...Y
           ,class = std::enable_if_t<(sizeof...(Y) > 1)>>
-  constexpr auto operator() (const F& f, X&& x, Y&&...y) const
-    -> std::result_of_t<F(X, std::result_of_t<rassoc_f(F,Y...)>)>
-  {
+  constexpr decltype(auto) operator() (const F& f, X&& x, Y&&...y) const {
     return invoke(f, std::forward<X>(x),
                   (*this)(f, std::forward<Y>(y)...));
   }
@@ -213,6 +205,7 @@ struct fix_f {
   }
 
   template<class F, class...X>
+  
 #ifndef __clang__
   constexpr
 #endif
@@ -247,8 +240,7 @@ constexpr auto compose = multary_n<2>(compose_f{});
 struct proj_f {
   template<class F, class ProjF, class...X,
            class = enable_if_t<(sizeof...(X) > 0)>>
-  constexpr auto operator() (F&& f, const ProjF& pf, X&&...x) const &
-    -> std::result_of_t<F(std::result_of_t<const ProjF&(X)>...)>
+  constexpr decltype(auto) operator() (F&& f, const ProjF& pf, X&&...x) const &
   {
     return invoke(std::forward<F>(f),
                   invoke(pf, std::forward<X>(x))...);
@@ -257,9 +249,7 @@ struct proj_f {
 
 struct lproj_f {
   template<class F, class ProjF, class X, class Y>
-  constexpr auto operator() (F&& f, ProjF&& pf, X&& x, Y&& y) const
-    -> std::result_of_t<F(std::result_of_t<ProjF(X)>, Y)>
-  {
+  constexpr decltype(auto) operator() (F&& f, ProjF&& pf, X&& x, Y&& y) const {
     return invoke(std::forward<F>(f),
                   invoke(std::forward<ProjF>(pf),
                          std::forward<X>(x)),
@@ -269,9 +259,7 @@ struct lproj_f {
 
 struct rproj_f {
   template<class F, class ProjF, class X, class Y>
-  constexpr auto operator() (F&& f, ProjF&& pf, X&& x, Y&& y) const
-    -> std::result_of_t<F(X, std::result_of_t<ProjF(Y)>)>
-  {
+  constexpr decltype(auto) operator() (F&& f, ProjF&& pf, X&& x, Y&& y) const {
     return invoke(std::forward<F>(f),
                   std::forward<X>(x),
                   invoke(std::forward<ProjF>(pf),
@@ -303,12 +291,9 @@ struct _less_helper {
 constexpr auto proj_less = proj(_less_helper{});
 
 struct join_f {
-  template<class F, class X>
-  using R = std::result_of_t<F(X)>;
-
   template<class F, class Left, class Right, class X, class Y>
-  constexpr auto operator() (F&& f, Left&& l, Right&& r, X&& x, Y&& y) const
-    -> std::result_of_t<F(R<Left,X>, R<Right,Y>)>
+  constexpr decltype(auto) operator() (F&& f, Left&& l, Right&& r,
+                                       X&& x, Y&& y) const
   {
     return invoke(std::forward<F>(f),
                   invoke(std::forward<Left>(l), std::forward<X>(x)),
@@ -322,12 +307,8 @@ struct join_f {
 constexpr auto join = multary_n<3>(join_f{});
 
 struct split_f {
-  template<class Sig>
-  using R = std::result_of_t<Sig>;
-
   template<class F, class Left, class Right, class X>
-  constexpr auto operator() (F&& f, Left&& l, Right&& r, X& x) const
-    -> std::result_of_t<F(R<Left(X&)>, R<Right(X&)>)>
+  constexpr decltype(auto) operator() (F&& f, Left&& l, Right&& r, X& x) const
   {
     return invoke(std::forward<F>(f),
                   invoke(std::forward<Left>(l), x),
@@ -347,9 +328,7 @@ struct Enabled_f {
   // FIXME: Should be able to take more than one argument, but compiler
   // complains.
   template<class X, class = enable_if_t<Enabler<X>::value>>
-  constexpr auto operator() (X&& x) const
-    -> std::result_of_t<const F&(X&&)>
-  {
+  constexpr decltype(auto) operator() (X&& x) const {
     return invoke(f, std::forward<X>(x));
   }
 };
