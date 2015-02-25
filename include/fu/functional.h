@@ -22,19 +22,6 @@ template<>
 struct Rank<0> {
 };
 
-constexpr struct pipe_f {
-  template<class X>
-  constexpr X operator() (X&& x) const {
-    return std::forward<X>(x);
-  }
-
-  template<class X, class F, class...G>
-  constexpr decltype(auto) operator() (X&& x, F&& f, G&&...g) const {
-    return (*this)(invoke(std::forward<F>(f), std::forward<X>(x)),
-                   std::forward<G>(g)...);
-  }
-} pipe{};
-
 struct lassoc_f {
   template<class F, class X, class Y>
   constexpr decltype(auto) operator() (F&& f, X&& x, Y&& y) const {
@@ -268,7 +255,7 @@ struct compose_n_f {
 
 template<size_t n, class F, class G>
 constexpr auto compose_n(F f, G g) {
-  return closure(compose_n_f<n>{}, std::move(f), std::move(g));
+  return multary_n<n>(closure(compose_n_f<n>{}, std::move(f), std::move(g)));
 }
 
 struct proj_f {
@@ -291,16 +278,6 @@ struct lproj_f {
   }
 };
 
-struct rproj_f {
-  template<class F, class ProjF, class X, class Y>
-  constexpr decltype(auto) operator() (F&& f, ProjF&& pf, X&& x, Y&& y) const {
-    return invoke(std::forward<F>(f),
-                  std::forward<X>(x),
-                  invoke(std::forward<ProjF>(pf),
-                         std::forward<Y>(y)));
-  }
-};
-
 /// proj(f,pf) -- constructs a projection, p, such that
 ///   p(x,y) <=> f(pf(x), pf(y))
 ///   p(x)   <=> ucompose(f, pf)(x)
@@ -308,9 +285,6 @@ constexpr auto proj = multary_n<2>(proj_f{});
 
 /// lproj(f, pf, x, y) <=> f(pf(x), y)
 constexpr auto lproj = multary_n<2>(lproj_f{});
-
-/// rproj(f, pf, x, y) <=> f(x, pf(y))
-constexpr auto rproj = multary_n<2>(rproj_f{});
 
 struct _less_helper {
   template<class X, class Y>
@@ -372,6 +346,13 @@ struct flip_f {
 };
 
 constexpr auto flip = multary_n<2>(flip_f{});
+
+/// pipe(x,f,g) <=> g(f(x))
+/// pipe(x)     <=> x
+constexpr auto pipe = overload(identity, lassoc(flip(invoke)));
+
+/// rproj(f, pf, x, y) <=> f(x, pf(y))
+constexpr auto rproj = ucompose(compose_n<2>(flip, lproj), flip);
 
 template<template<class...>class Enabler, class F>
 struct Enabled_f {

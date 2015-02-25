@@ -45,6 +45,9 @@ int main() {
   static_assert(_add3(1)(1)(1) == 3, "");
 #endif
 
+  static_assert(fu::rproj(fu::mult)(fu::add(1))(1,0) == 1, "");
+  static_assert(fu::rproj(fu::mult, fu::add(1))(1,0) == 1, "");
+
   constexpr auto g = fu::compose_n<2>(add3, add_half);
   static_assert(g(1,1,1,1) == 3, "");
   static_assert(g(2,2,1,1) == 4, "");
