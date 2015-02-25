@@ -237,6 +237,40 @@ constexpr auto fix = multary(fix_f{});
 constexpr auto compose = multary_n<2>(compose_f{});
 // FIXME: Should be `lassoc`, but the current definition won't work.
 
+template<size_t n>
+struct compose_n_f {
+  template<std::size_t...i, std::size_t...j, class F, class G, class Tuple>
+  static constexpr decltype(auto) do_invoke(std::index_sequence<i...>,
+                                            std::index_sequence<j...>,
+                                            F&& f, G&& g, Tuple&& t) {
+    return invoke(std::forward<F>(f),
+                  invoke(std::forward<G>(g),
+                         std::get<i>(std::forward<Tuple>(t))...),
+                  std::get<j>(std::forward<Tuple>(t))...);
+  }
+
+
+  template<class F, class G, class Tuple>
+  static constexpr decltype(auto) split(F&& f, G&& g, Tuple&& t) {
+    using is = decltype(iseq::make(t));
+    return do_invoke(iseq::take<n>(is{}), iseq::drop<n>(is{}),
+                     std::forward<F>(f),
+                     std::forward<G>(g),
+                     std::forward<Tuple>(t));
+  }
+
+  template<class F, class G, class...X>
+  constexpr decltype(auto) operator() (F&& f, G&& g, X&&...x) const {
+    return split(std::forward<F>(f), std::forward<G>(g),
+                 tpl::forward_tuple(std::forward<X>(x)...));
+  }
+};
+
+template<size_t n, class F, class G>
+constexpr auto compose_n(F f, G g) {
+  return closure(compose_n_f<n>{}, std::move(f), std::move(g));
+}
+
 struct proj_f {
   template<class F, class ProjF, class...X,
            class = enable_if_t<(sizeof...(X) > 0)>>
