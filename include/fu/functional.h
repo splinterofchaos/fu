@@ -363,7 +363,7 @@ constexpr auto rproj = multary_n<2>(ucompose(compose_n<2>(flip, lproj), flip));
 /// rassoc(f, x, y, z) <=> f(x, f(y,z))
 ///
 /// Ex: rassoc(+)(1,2,3) = 1 + (2+3)
-constexpr auto rassoc = ucompose(invoke, flip, lassoc, flip);
+constexpr auto rassoc = multary(ucompose(flip, lassoc, flip));
 // Informal proof:
 // compose(flip, lassoc, flip)(f)(x,y,z) =
 //  flip(lassoc(flip(f)))(x,y,z) =  | definition of compose
