@@ -20,7 +20,16 @@ constexpr struct unfixed_pow2_f {
   }
 } unfixed_pow2{};
 
+constexpr int divide(int x, int y) {
+    return x / y;
+}
+
 int main() {
+  static_assert(fu::rassoc(divide, 10,2) == 10/2, "");
+  static_assert(fu::rassoc(divide, 10,8,4) == 10/(8/4), "");
+  static_assert(fu::rassoc(divide, 10,8,8,2) == 10/(8/(8/2)), "");
+  static_assert(fu::rassoc(divide)(10,8,8,2) == 10/(8/(8/2)), "");
+
   // FIXME: gcc cannot evaluate some tests as constexpr, although clang can,
   // and it's vice versa for other tests.
 #ifdef __clang__
@@ -44,6 +53,19 @@ int main() {
   constexpr auto _add3 = fu::pipe(add3, fu::multary_n<2>);
   static_assert(_add3(1)(1)(1) == 3, "");
 #endif
+
+  static_assert(fu::rproj(fu::mult)(fu::add(1))(1,0) == 1, "");
+  static_assert(fu::rproj(fu::mult, fu::add(1))(1,0) == 1, "");
+
+  constexpr auto g = fu::compose_n<2>(add3, add_half);
+  static_assert(g(1,1,1,1) == 3, "");
+  static_assert(g(2,2,1,1) == 4, "");
+
+  static_assert(fu::flip(g)(1,1,2,2) == 4, "");
+  static_assert(fu::flip(g,1,1,2,2) == 4, "");
+
+  static_assert(fu::flip(fu::sub, 5, 10) == 5, "flip(-,5,10) <=> 10 - 5");
+  static_assert(fu::flip(fu::less, 5, 4, 3, 2, 1), "");
 
   constexpr auto pow2 = fu::fix(unfixed_pow2);
   GCC_STATIC_ASSERT(pow2(0) == 1);

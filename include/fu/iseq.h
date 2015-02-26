@@ -38,17 +38,13 @@ constexpr auto push(std::integer_sequence<I, N...>, Integer<I, M>)
 
 template<size_t X, class I, I...N,
          class = typename std::enable_if<(X == 0)>::type>
-constexpr auto drop(std::integer_sequence<I, N...> i)
-  -> decltype(i)
-{
+constexpr auto drop(std::integer_sequence<I, N...> i) {
   return i;
 }
 
 template<size_t X, class I, I N, I...M,
          class = typename std::enable_if<(X > 0)>::type>
-constexpr auto drop(std::integer_sequence<I, N, M...>)
-  -> decltype(drop<X - 1>(std::integer_sequence<I, M...>{}))
-{
+constexpr auto drop(std::integer_sequence<I, N, M...>) {
   static_assert(X <= sizeof...(M) + 1, "Index too high.");
   return drop<X - 1>(std::integer_sequence<I, M...>{});
 }
@@ -56,9 +52,7 @@ constexpr auto drop(std::integer_sequence<I, N, M...>)
 template<size_t X, class I, I...N, I...M,
          class = typename std::enable_if<(X == 0)>::type>
 constexpr auto take(std::integer_sequence<I, N...> i,
-                    std::integer_sequence<I, M...>)
-  -> decltype(i)
-{
+                    std::integer_sequence<I, M...>) {
   return i;
 }
 
@@ -73,9 +67,7 @@ constexpr auto take(std::integer_sequence<I, N...> i,
 
 template<size_t X, class I, I...N>
 constexpr auto take(std::integer_sequence<I, N...> i)
-  -> decltype(take<X>(std::integer_sequence<I>{}, i))
-{
-  return take<X>(std::integer_sequence<I>{}, i);
+{ return take<X>(std::integer_sequence<I>{}, i);
 }
 
 } // namespace iseq

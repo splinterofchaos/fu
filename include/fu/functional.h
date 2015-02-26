@@ -22,19 +22,6 @@ template<>
 struct Rank<0> {
 };
 
-constexpr struct pipe_f {
-  template<class X>
-  constexpr X operator() (X&& x) const {
-    return std::forward<X>(x);
-  }
-
-  template<class X, class F, class...G>
-  constexpr decltype(auto) operator() (X&& x, F&& f, G&&...g) const {
-    return (*this)(invoke(std::forward<F>(f), std::forward<X>(x)),
-                   std::forward<G>(g)...);
-  }
-} pipe{};
-
 struct lassoc_f {
   template<class F, class X, class Y>
   constexpr decltype(auto) operator() (F&& f, X&& x, Y&& y) const {
@@ -69,11 +56,6 @@ struct rassoc_f {
 ///
 /// Ex: lassoc(+)(1,2,3) = (1+2) + 3
 constexpr auto lassoc = multary(lassoc_f{});
-
-/// Right-associative application.
-///
-/// Ex: rassoc(+)(1,2,3) = 1 + (2+3)
-constexpr auto rassoc = multary(rassoc_f{});
 
 struct transitive_f {
   /// trans(b,j,x,y) = b(x,y)
@@ -237,6 +219,40 @@ constexpr auto fix = multary(fix_f{});
 constexpr auto compose = multary_n<2>(compose_f{});
 // FIXME: Should be `lassoc`, but the current definition won't work.
 
+template<size_t n>
+struct compose_n_f {
+  template<std::size_t...i, std::size_t...j, class F, class G, class Tuple>
+  static constexpr decltype(auto) do_invoke(std::index_sequence<i...>,
+                                            std::index_sequence<j...>,
+                                            F&& f, G&& g, Tuple&& t) {
+    return invoke(std::forward<F>(f),
+                  invoke(std::forward<G>(g),
+                         std::get<i>(std::forward<Tuple>(t))...),
+                  std::get<j>(std::forward<Tuple>(t))...);
+  }
+
+
+  template<class F, class G, class Tuple>
+  static constexpr decltype(auto) split(F&& f, G&& g, Tuple&& t) {
+    using is = decltype(iseq::make(t));
+    return do_invoke(iseq::take<n>(is{}), iseq::drop<n>(is{}),
+                     std::forward<F>(f),
+                     std::forward<G>(g),
+                     std::forward<Tuple>(t));
+  }
+
+  template<class F, class G, class...X>
+  constexpr decltype(auto) operator() (F&& f, G&& g, X&&...x) const {
+    return split(std::forward<F>(f), std::forward<G>(g),
+                 tpl::forward_tuple(std::forward<X>(x)...));
+  }
+};
+
+template<size_t n, class F, class G>
+constexpr auto compose_n(F f, G g) {
+  return multary_n<n>(closure(compose_n_f<n>{}, std::move(f), std::move(g)));
+}
+
 struct proj_f {
   template<class F, class ProjF, class...X,
            class = enable_if_t<(sizeof...(X) > 0)>>
@@ -257,16 +273,6 @@ struct lproj_f {
   }
 };
 
-struct rproj_f {
-  template<class F, class ProjF, class X, class Y>
-  constexpr decltype(auto) operator() (F&& f, ProjF&& pf, X&& x, Y&& y) const {
-    return invoke(std::forward<F>(f),
-                  std::forward<X>(x),
-                  invoke(std::forward<ProjF>(pf),
-                         std::forward<Y>(y)));
-  }
-};
-
 /// proj(f,pf) -- constructs a projection, p, such that
 ///   p(x,y) <=> f(pf(x), pf(y))
 ///   p(x)   <=> ucompose(f, pf)(x)
@@ -274,9 +280,6 @@ constexpr auto proj = multary_n<2>(proj_f{});
 
 /// lproj(f, pf, x, y) <=> f(pf(x), y)
 constexpr auto lproj = multary_n<2>(lproj_f{});
-
-/// rproj(f, pf, x, y) <=> f(x, pf(y))
-constexpr auto rproj = multary_n<2>(rproj_f{});
 
 struct _less_helper {
   template<class X, class Y>
@@ -318,6 +321,58 @@ struct split_f {
 
 /// split(f,l,r)(x) <=> f(l(x), r(x))
 constexpr auto split = multary_n<3>(split_f{});
+
+struct flip_f {
+  template<class I, I...i, class F, class...X>
+  static constexpr decltype(auto) reverse(std::integer_sequence<I,i...>,
+                                          F&& f,
+                                          std::tuple<X...> args)
+  {
+    return fu::invoke(std::forward<F>(f),
+                      std::get<sizeof...(X) - i - 1>(std::move(args))...);
+  }
+
+  template<class F, class...X>
+  constexpr decltype(auto) operator() (F&& f, X&&...x) const {
+    return reverse(std::index_sequence_for<X...>{},
+                   std::forward<F>(f),
+                   tpl::forward_tuple(std::forward<X>(x)...));
+  }
+};
+
+constexpr auto flip = multary_n<2>(flip_f{});
+
+/// pipe(x,f,g) <=> g(f(x))
+/// pipe(x)     <=> x
+constexpr auto pipe = overload(identity, lassoc(flip(invoke)));
+// Informal proof:
+// lassoc(flip(invoke), x, f, g)         =
+//   flip(invoke)(flip(invoke)(x, f), g) =  | definition of lassoc
+//   invoke(g, invoke(f,x)) = g(f(x))       | definition of flip
+
+/// rproj(f, pf, x, y) <=> f(x, pf(y))
+constexpr auto rproj = multary_n<2>(ucompose(compose_n<2>(flip, lproj), flip));
+// Informal proof:
+// compose(compose<2>(flip, lproj), flip))(f)(pf)(x, y) =
+//   compose<2>(flip, lproj)(flip(f), pf)(x, y)  =  | definition of compose
+//   flip(lproj(flip(f) pf))(x, y)               =  | definition of compose<2>
+//   lproj(flip(f), pf, y, x)                    =  | definition of flip
+//   flip(f)(pf(y) x) = f(x, pf(y))                 | definition of lproj
+
+/// Right-associative application.
+/// rassoc(f, x, y, z) <=> f(x, f(y,z))
+///
+/// Ex: rassoc(+)(1,2,3) = 1 + (2+3)
+constexpr auto rassoc = ucompose(invoke, flip, lassoc, flip);
+// Informal proof:
+// compose(flip, lassoc, flip)(f)(x,y,z) =
+//  flip(lassoc(flip(f)))(x,y,z) =  | definition of compose
+//  lassoc(flip(f), z, y, x)     =  | definition if flip and invoke
+//  flip(f)(flip(f,z,y), x)      =  | definition of lassoc
+//  f(x, f(y,z))
+//
+// The extra `invoke` is required to make sure `flip . lassoc . flip` doesn't
+// get applied more than one argument.
 
 template<template<class...>class Enabler, class F>
 struct Enabled_f {

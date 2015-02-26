@@ -133,20 +133,24 @@ constexpr auto fact = fix([](auto rec, int x) -> int {
 });
 ```
 
-## compose(f,g) and ucompose(f,g)
+## compose(f,g), ucompose(f,g), compose_n<n>(f,g)
 
 Many useful forms of composition exist, but `compose(f,g)` is the most general.
 It returns a function, `c`, that takes two tuples, `{x...}` and `{y...}`, such
 that `c({x...}, {y...})` computes `f(g(x...), y...)`. For most instances,
 `u = ucompose(f,g)` is much simpler; `u(x,y...)` computes `f(g(x), y...)`--it
-is short for "unary composition".
+is short for "unary composition". It assumes that `g` is unary, but often it
+may not be. `compose_n<n>(f,g)` sends the first `n` arguments to `g` and the
+rest to `f`.
 ```c++
 void f(int, int, int);
 void g(int, int);
 constexpr auto fg = compose(f,g);
+constexpr auto fg2 = compose_n<2>(f,g)
 
 using fu::tpl::tuple;
 fg(tuple(1,2), tuple(3,4));  // computes: f(g(1,2), 3, 4)
+fg2(1,2,3,4);                // computes: f(g(1,2), 3, 4)
 
 void h(int);
 constexpr auto fh = ucompose(f,h);
@@ -174,6 +178,16 @@ std::accumulate(first, last, 0, rproj(std::plus<>{}, &std::string::size));
 `split(f,l,r)` returns a function that takes a single argument, `x`, and
 computes `f(l(x), r(x))`. `join(f,l,r)` takes exactly two arguments, `x` and
 `y`, and computes `f(l(x), r(y))`.
+
+## flip(f)
+
+`flip(f)` reverses the order of arguments applied to `f`.
+```c++
+static_assert(fu::flip(fu::sub)(y,x) == fu::sub(x,y));
+
+auto h(A, B, C, D);
+flip(h, d, c, b, a);  // invokes: h(a,b,c,d)
+```
 
 ## constant(x)
 
