@@ -153,25 +153,23 @@ struct Part {
 
   template<class...Y>
   constexpr RESULT(const F&) operator() (Y&&...y) const & {
-    return tpl::apply(f, std::tuple_cat(t, args(std::forward<Y>(y)...)));
+    return tpl::apply(f, t, args(std::forward<Y>(y)...));
   }
 
   template<class...Y>
   constexpr RESULT(const F&&) operator() (Y&&...y) && {
-    return tpl::apply(std::move(f),
-                      std::tuple_cat(std::move(t), args(std::forward<Y>(y)...)));
+    return tpl::apply(std::move(f), std::move(t), args(std::forward<Y>(y)...));
   }
 
 #ifdef __clang__
   template<class...Y>
   constexpr RESULT(F&) operator() (Y&&...y) & {
-    return tpl::apply(f, std::tuple_cat(t, args(std::forward<Y>(y)...)));
+    return tpl::apply(f, t, args(std::forward<Y>(y)...));
   }
 
   template<class...Y>
   constexpr RESULT(const F&&) operator() (Y&&...y) const && {
-    return tpl::apply(std::move(f),
-                      std::tuple_cat(std::move(t), args(std::forward<Y>(y)...)));
+    return tpl::apply(std::move(f), std::move(t), args(std::forward<Y>(y)...));
   }
 #endif
 };

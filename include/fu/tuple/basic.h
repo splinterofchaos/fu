@@ -16,17 +16,24 @@ constexpr struct apply_f {
   using Elem = decltype(std::get<i>(std::declval<Tuple>()));
 
   template<class F, class Tuple, class I, I...N>
-  constexpr decltype(auto) operator() (F&& f, Tuple&& t,
-                                       std::integer_sequence<I, N...>) const
+  constexpr decltype(auto) operator() (std::integer_sequence<I, N...>,
+                                       F&& f, Tuple&& t) const
   {
     return fu::invoke(std::forward<F>(f),
                       std::get<N>(std::forward<Tuple>(t))...);
   }
 
   template<class F, class Tuple>
-  constexpr auto operator() (const F& f, Tuple&& t) const
+  constexpr decltype(auto) invoke1(F&& f, Tuple&& t) const {
+    using IS = decltype(iseq::make(t));
+    return (*this)(IS{}, std::forward<F>(f), std::forward<Tuple>(t));
+  }
+
+  template<class F, class...Tuple>
+  constexpr auto operator() (F&& f, Tuple&&...t) const
   {
-    return (*this)(f, std::forward<Tuple>(t), iseq::make(t));
+    // TODO: don't use temporary tuple
+    return invoke1(std::forward<F>(f), std::tuple_cat(std::forward<Tuple>(t)...));
   }
 
   // Since apply_f is used to define generic partial application, it must

@@ -157,9 +157,8 @@ struct compose_f {
     -> decltype(auto)
   {
     return tpl::apply(std::forward<F>(f),
-                      std::tuple_cat(app1(std::forward<G>(g),
-                                          std::forward<TupleA>(a)),
-                                     std::forward<TupleB>(b)));
+                      app1(std::forward<G>(g), std::forward<TupleA>(a)),
+                      std::forward<TupleB>(b));
   }
 };
 
