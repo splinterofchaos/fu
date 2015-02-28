@@ -69,44 +69,114 @@ template<typename F>
 struct MemFn {
   F f;
 
-  // True if `f` points to a member object, not a function.
-  static constexpr bool not_f = std::is_member_object_pointer<F>::value;
-
   constexpr MemFn(F f) : f(f) { }
 
   template<class O, class...X>
-  constexpr auto operator()(O&& o, X&&...x) const
-    -> decltype((std::declval<O>().*f)(std::declval<X>()...))
-  {
-    return (std::forward<O>(o).*f)(std::forward<X>(x)...);
+  constexpr decltype(auto) operator() (O&& o, X&&...x) const {
+    return invoke_member(f, std::forward<O>(o), std::forward<X>(x)...);
+  }
+};
+
+template<class R, class O>
+struct MemFn<R O::*> {
+  using F = R O::*;
+  F f;
+
+  constexpr MemFn(F f) : f(f) { }
+
+  constexpr decltype(auto) operator() (O& o) const {
+    return invoke_member(f, o);
   }
 
-  template<class O, class...X>
-  constexpr auto operator() (O&& o, X&&...x) const
-    -> decltype((std::declval<O>()->*f)(std::declval<X>()...))
-  {
-    return (std::forward<O>(o)->*f)(std::forward<X>(x)...);
+  constexpr decltype(auto) operator() (O&& o) const {
+    return invoke_member(f, std::move(o));
   }
 
-  template<class O>
-  constexpr auto operator() (O&& o) const
-    -> enable_if_t<not_f, decltype(std::declval<O>().*f)>
-  {
-    return std::forward<O>(o).*f;
+  constexpr decltype(auto) operator() (const O& o) const {
+    return invoke_member(f, o);
   }
 
-  template<class O>
-  constexpr auto operator() (O&& o) const
-    -> enable_if_t<not_f, decltype(std::declval<O>()->*f)>
-  {
-    return std::forward<O>(o)->*f;
+  constexpr decltype(auto) operator() (const O&& o) const {
+    return invoke_member(f, std::move(o));
   }
+
+  constexpr decltype(auto) operator() (O* o) const {
+    return invoke_member(f, o);
+  }
+
+  constexpr decltype(auto) operator() (const O* o) const {
+    return invoke_member(f, o);
+
+  }
+};
+
+/// Basic member function object given a member function, F, and an object
+/// type, O.
+template<class F, class O>
+struct basic_mem_fn_f {
+  F f;
+
+  constexpr basic_mem_fn_f(F f) : f(f) { }
+
+  template<class...X>
+  constexpr decltype(auto) operator()(O&& o, X&&...x) const {
+    return invoke_member(f, std::forward<O>(o), std::forward<X>(x)...);
+  }
+};
+
+
+template<class R, class O, class...X>
+struct MemFn<R (O::*)(X...)> : basic_mem_fn_f<R (O::*)(X...), O&> {
+  using base = basic_mem_fn_f<R (O::*)(X...), O&>;
+  using base::base;
+  using base::operator();
+};
+
+template<class R, class O, class...X>
+struct MemFn<R (O::*)(X...) &> : basic_mem_fn_f<R (O::*)(X...) &, O&> {
+  using base = basic_mem_fn_f<R (O::*)(X...) &, O&>;
+  using base::base;
+  using base::operator();
+};
+
+template<class R, class O, class...X>
+struct MemFn<R (O::*)(X...) &&> : basic_mem_fn_f<R (O::*)(X...) &&, O> {
+  using base = basic_mem_fn_f<R (O::*)(X...) &&, O>;
+  using base::base;
+  using base::operator();
+};
+
+template<class R, class O, class...X>
+struct MemFn<R (O::*)(X...) const>
+    : basic_mem_fn_f<R (O::*)(X...) const, const O&>
+{
+  using base = basic_mem_fn_f<R (O::*)(X...) const, const O&>;
+  using base::base;
+  using base::operator();
+};
+
+template<class R, class O, class...X>
+struct MemFn<R (O::*)(X...) const&>
+    : basic_mem_fn_f<R (O::*)(X...) const&, const O&>
+{
+  using base = basic_mem_fn_f<R (O::*)(X...) const&, const O&>;
+  using base::base;
+  using base::operator();
+};
+
+template<class R, class O, class...X>
+struct MemFn<R (O::*)(X...) const&&>
+    : basic_mem_fn_f<R (O::*)(X...) const&&, const O>
+{
+  using base = basic_mem_fn_f<R (O::*)(X...) const&&, const O>;
+  using base::base;
+  using base::operator();
 };
 
 /// MemFn constructor.
 template<class F>
-constexpr MemFn<std::decay_t<F>> mem_fn(F&& f) {
-  return {std::forward<F>(f)};
+constexpr MemFn<F> mem_fn(F f) {
+  return {f};
 }
 
 /// to_functor: Ensures function, f, is an object.

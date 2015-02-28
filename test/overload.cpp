@@ -51,9 +51,7 @@ int main() {
   constexpr auto set =
     fu::overload(Int{} ,Char{}
                 ,f ,g
-#ifdef __clang__
                 ,&X::f ,&X::f_crr
-#endif
                 );
 
   static_assert(set(0) == INT, "");
@@ -72,22 +70,36 @@ int main() {
   static_assert(onInt(0.0) != INT, "");
 
   // BUG: gcc cannot deduce member function calls as constexpr.
-#ifdef __clang__
   X x;
-  static_assert(set(x) == REGULAR, "");
-  static_assert(set(X::Const()) == CONST_RVALUE, "");
+  assert(set(x) == REGULAR);
+  assert(set(X::Const()) == CONST_RVALUE);
 
   // Use a ranked overload to dispatch between subtlety different values.
-  constexpr auto mems = fu::ranked_overload(&X::f_r
-                                           ,&X::f_rr
-                                           ,&X::f_cr
-                                           ,&X::f_crr
-                                           ,&Y::y);
+  constexpr auto mem_overload =
+    // FIXME: since mem_fn(f) no longer perfect forwards the object parameter,
+    // fu::overload should be usable for X's many member functions. But gcc
+    // complains that this creates "ambiguous base classes". It does not have
+    // this problem with fu::ranked_overload. Perhaps because of its use of
+    // decltype?
+#ifndef __clang__
+    fu::ranked_overload;
+#else
+    fu::overload;
+#endif
+  constexpr auto mems = mem_overload( &X::f_r
+                                    , &X::f_rr
+                                    , &X::f_crr
+                                    , &X::f_cr
+                                    , &Y::y
+                                    );
 
-  static_assert(mems(x) == REF, "");
+  assert(mems(x) == REF);
+
+#ifdef __clang__
+  // FIXME: GCC invalidly tries to call X::f_r (requires non-const ref). It
+  // compiles, but the assertions fail at runtime.
   static_assert(mems(X()) == RVALUE, "");
   static_assert(mems(static_cast<const X&>(x)) == CONST_REF, "");
   static_assert(mems(X::Const()) == CONST_RVALUE, "");
-  static_assert(mems(Y()) == MEMBER, "");
 #endif
 } 
