@@ -57,10 +57,12 @@ struct bit_and_f {
 };
 constexpr auto bit_and = numeric_binary(bit_and_f{});
 
-template<class Binary, class Join = and__f>
-constexpr auto numeric_relational(Binary b, Join j = Join{}) {
-  return multary(transitive(b, j));
-}
+constexpr struct numeric_relational_f {
+  template<class Binary, class Join = and__f>
+  constexpr auto operator() (Binary b, Join j = Join{}) const {
+    return multary(transitive(b, j));
+  }
+} numeric_relational{};
 
 // Helper to define binary relations.
 #define DECL_REL_OP(name, op)                              \
