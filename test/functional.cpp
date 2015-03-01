@@ -10,6 +10,8 @@ constexpr int add_half(int x, int y) {
   return (x + y) / 2;
 }
 
+constexpr int half(int x) { return x / 2; }
+
 constexpr struct unfixed_pow2_f {
   template<class Rec>
 #ifndef __clang__
@@ -41,6 +43,7 @@ int main() {
 #endif
   using fu::inc;
   CLANG_STATIC_ASSERT((fu::ucompose(inc,inc,inc,inc)(1) == 5));
+  CLANG_STATIC_ASSERT((fu::mcompose(inc,inc,inc,inc)(1) == 5));
 
   constexpr auto f = fu::compose(add3, add_half);
 
@@ -53,6 +56,9 @@ int main() {
   constexpr auto _add3 = fu::pipe(add3, fu::multary_n<2>);
   static_assert(_add3(1)(1)(1) == 3, "");
 #endif
+
+  constexpr auto add_inc_half = fu::mcompose(half, inc, add3);
+  static_assert(add_inc_half(1,2,3) == (6+1)/2, "");
 
   static_assert(fu::rproj(fu::mult)(fu::add(1))(1,0) == 1, "");
   static_assert(fu::rproj(fu::mult, fu::add(1))(1,0) == 1, "");

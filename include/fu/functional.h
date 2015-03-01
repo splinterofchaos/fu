@@ -176,6 +176,14 @@ struct ucompose_f {
   }
 };
 
+struct mcompose_f {
+  template<class F, class G, class...X>
+  constexpr decltype(auto) operator() (F&& f, G&& g, X&&...x) const {
+    return fu::invoke(std::forward<F>(f),
+                      fu::invoke(std::forward<G>(g), std::forward<X>(x)...));
+  }
+};
+
 /// Creates a unary composition: ucompose(f,g)(x) = f(g(x))
 constexpr auto ucompose = lassoc(multary_n<2>(ucompose_f{}));
 
@@ -184,6 +192,13 @@ constexpr auto ucompose = lassoc(multary_n<2>(ucompose_f{}));
 /// compose(f,g)({x...}, {y...}) = f(g(x...), y...)
 constexpr auto compose = multary_n<2>(compose_f{});
 // FIXME: Should be `lassoc`, but the current definition won't work.
+
+/// Creates an M-arity composition.
+///
+/// mcompose(f,g)(x)      <=> ucompose(f,g)(x)
+/// mcompose(f,g)(x...)   <=> f(g(x...))
+/// mcompose(f,g,h)(x...) <=> f(g(h(x...)))
+constexpr auto mcompose = lassoc(multary_n<2>(mcompose_f{}));
 
 template<size_t n>
 struct compose_n_f {
