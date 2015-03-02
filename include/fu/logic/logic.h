@@ -1,10 +1,13 @@
 
 
 #include <fu/functional.h>
-#include <fu/utility.h>
 
 namespace fu {
 namespace logic {
+
+constexpr struct basic_not_f {
+  constexpr bool operator() (bool b) const { return !b; }
+} basic_not{};
 
 /// Logical function projection.
 /// Invokes short-circuit logical operations on a predicate, p.
@@ -30,13 +33,34 @@ struct logical_project_f {
   }
 };
 
+struct logical_transitive_f {
+  template<class Identity, class Ok, class Pred, class X, class Y>
+  constexpr decltype(auto) operator() (const Identity&, const Ok&,
+                                       Pred&& p, X&& x, Y&& y) const {
+    return fu::invoke(std::forward<Pred>(p),
+                      std::forward<X>(x), std::forward<Y>(y));
+  }
+
+  template<class Identity, class Ok, class Pred, class X, class Y, class...Z,
+           class = enable_if_t<(sizeof...(Z) > 0)>>
+  constexpr decltype(auto) operator() (Identity&& id, Ok&& ok,
+                                       Pred&& p, X&& x, Y&& y, Z&&...z) const {
+    return fu::invoke(ok, fu::invoke(p, std::forward<X>(x), y))
+      ? (*this)(std::forward<Identity>(id), std::forward<Ok>(ok),
+                std::forward<Pred>(p),
+                std::forward<Y>(y), std::forward<Z>(z)...)
+      : std::forward<Identity>(id);
+  }
+};
+
+constexpr auto logical_transitive = multary_n<4>(logical_transitive_f{});
 constexpr auto logical_project = multary_n<3>(logical_project_f{});
 
 /// all(pred)(x....) <=> pred(x) && ...
 constexpr auto all = logical_project(false, identity);
 
 /// any(pred)(x...) <=> pred(x) || ...
-constexpr auto any = logical_project(true, not_);
+constexpr auto any = logical_project(true, basic_not);
 
 } // namespace logic
 } // namespace fu

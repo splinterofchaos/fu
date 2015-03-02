@@ -10,9 +10,29 @@ less(x,y,z);  // computes and(less(x,y), less(y,z))
 ```
 While this version of `less` is correct, `less(x,y)` and `less(y,z)` must both
 be computed, even if `less(x,y)` returns false--but `less(x,y) && less(y,z)`
-would short-circuit if this first one failed.
+would short-circuit if this first one failed. `transitive` is too generic to
+make a good `less`.
 
-TODO: complete example
+`fu::logic::logical_transitive` can be used to create short-circuit logical
+evaluations, although its interface looks quite obscure.
+```c++
+auto less = logical_transitive(false, identity, std::less<>{});
+less(1,2,3);  // computes 1 < 2 && 2 < 3
+less(3,2,1);  // computes 3 < 2 and stops
+```
+## logical_transitive
+
+All of the relational operations from `"fu/utility.h"` define themselves by
+`op = logical_transitive(identity, eval, predicate)`. `identity` represents the
+identity element of the operation (`true` for `and` and `false` for `or`),
+`eval` returns a boolean deciding whether to recurse or not, and `predicate` is
+the actual function evaluating the arguments.
+
+Given `op(a,b,c,d)`, first `eval(predicate(a,b))` will be computed. If false,
+then it returns `identity`, or otherwise will compose `eval(predicate(b,c))`
+and repeat until the argument list ends.
+
+*(See above for code example.)*
 
 ## logical_project(identity, eval, pred), all, and any
 

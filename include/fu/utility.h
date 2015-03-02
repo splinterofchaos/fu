@@ -2,6 +2,7 @@
 #pragma once
 
 #include <fu/functional.h>
+#include <fu/logic.h>
 
 namespace fu {
 
@@ -57,10 +58,25 @@ struct bit_and_f {
 };
 constexpr auto bit_and = numeric_binary(bit_and_f{});
 
+// Helper to define unary operators.
+#define DECL_UNARY(name, op)                               \
+  constexpr struct name##_f {                              \
+    template<class X>                                      \
+    constexpr decltype(auto) operator() (X&& x) const      \
+    { return op std::forward<X>(x); }                      \
+  } name{};
+
+DECL_UNARY(pos,   +);
+DECL_UNARY(neg,   -);
+DECL_UNARY(not_,  !);
+DECL_UNARY(deref, *);
+DECL_UNARY(addr,  &);  // TODO: Use std::address_of().
+
 constexpr struct numeric_relational_f {
-  template<class Binary, class Join = and__f>
-  constexpr auto operator() (Binary b, Join j = Join{}) const {
-    return multary(transitive(b, j));
+  template<class Binary, class Identity=bool, class Ok=identity_f>
+  constexpr auto operator() (Binary b, Identity ident=false, Ok ok = Ok{}) const
+  {
+    return logic::logical_transitive(ident, ok, b);
   }
 } numeric_relational{};
 
@@ -81,20 +97,6 @@ DECL_REL_OP(eq,         ==);
 DECL_REL_OP(neq,        !=);
 DECL_REL_OP(less_eq,    <=);
 DECL_REL_OP(greater_eq, >=);
-
-// Helper to define unary operators.
-#define DECL_UNARY(name, op)                               \
-  constexpr struct name##_f {                              \
-    template<class X>                                      \
-    constexpr decltype(auto) operator() (X&& x) const      \
-    { return op std::forward<X>(x); }                      \
-  } name{};
-
-DECL_UNARY(pos,   +);
-DECL_UNARY(neg,   -);
-DECL_UNARY(not_,  !);
-DECL_UNARY(deref, *);
-DECL_UNARY(addr,  &);  // TODO: Use std::address_of().
 
 #undef DECL_BIN_OP
 #undef DECL_REL_OP
