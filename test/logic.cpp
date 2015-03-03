@@ -19,4 +19,8 @@ int main() {
   static_assert(any(larger_than_10, 11, 14, 20), "");
   static_assert(any(larger_than_10, 11, 4, 9), "");
   static_assert(!any(larger_than_10, 1, 4, 5), "");
+
+  static_assert(none(larger_than_10, 1, 3, 4), "");
+  static_assert(none(larger_than_10)(1, 3, 4), "");
+  static_assert(!none(larger_than_10, 1, 11, 4), "");
 }

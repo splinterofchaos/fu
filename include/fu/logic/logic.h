@@ -62,5 +62,8 @@ constexpr auto all = logical_project(false, identity);
 /// any(pred)(x...) <=> pred(x) || ...
 constexpr auto any = logical_project(true, basic_not);
 
+/// none(pred)(x...) <=> !pred(x) && ...
+constexpr auto none = multary(mcompose(basic_not, any));
+
 } // namespace logic
 } // namespace fu
