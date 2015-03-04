@@ -65,5 +65,25 @@ constexpr auto any = fu::logic::project(true, basic_not);
 /// none(pred)(x...) <=> !pred(x) && ...
 constexpr auto none = multary(mcompose(basic_not, any));
 
+struct either_f {
+  template<class F, class G, class...X>
+  constexpr decltype(auto) operator() (F&& f, G&& g, X&&...x) const {
+    return fu::invoke(std::forward<F>(f), x...)
+      || fu::invoke(std::forward<G>(g), std::forward<X>(x)...);
+  }
+};
+
+constexpr auto either = multary_n<2>(either_f{});
+
+struct both_f {
+  template<class F, class G, class...X>
+  constexpr decltype(auto) operator() (F&& f, G&& g, X&&...x) const {
+    return fu::invoke(std::forward<F>(f), x...)
+      && fu::invoke(std::forward<G>(g), std::forward<X>(x)...);
+  }
+};
+
+constexpr auto both = multary_n<2>(both_f{});
+
 } // namespace logic
 } // namespace fu

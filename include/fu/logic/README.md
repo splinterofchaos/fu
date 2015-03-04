@@ -51,3 +51,8 @@ auto big = [](int x) { return x > 5; };
 assert(any(big, 3, 4, 5, 6));
 assert(all(big, 6, 7, 8, 9));
 ```
+
+## either, both
+
+`fu::logic::either(p1,p2)` returns a predicate, `e` such that `e(x,y)` computes
+`p1(x, y) || p2(x, y)`. `fu::logic::both` works the same way, but uses `and`.
