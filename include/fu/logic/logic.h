@@ -12,10 +12,10 @@ constexpr struct basic_not_f {
 /// Logical function projection.
 /// Invokes short-circuit logical operations on a predicate, p.
 ///
-/// logical_project(ident,ok,p,x,y) <=> ok(p(x)) ? p(y) : ident
-/// logical_project(false,id,p,x,y) <=> p(x) ? p(y) : false
-/// logical_project(true,(!),p,x,y) <=> !p(x) ? p(y) : true
-struct logical_project_f {
+/// logic::project(ident,ok,p,x,y) <=> ok(p(x)) ? p(y) : ident
+/// logic::project(false,id,p,x,y) <=> p(x) ? p(y) : false
+/// logic::project(true,(!),p,x,y) <=> !p(x) ? p(y) : true
+struct project_f {
   template<class Identity, class Ok, class Pred, class X>
   constexpr decltype(auto) operator() (const Identity&, const Ok&,
                                        Pred&& p, X&& x) const {
@@ -33,7 +33,7 @@ struct logical_project_f {
   }
 };
 
-struct logical_transitive_f {
+struct transitive_f {
   template<class Identity, class Ok, class Pred, class X, class Y>
   constexpr decltype(auto) operator() (const Identity&, const Ok&,
                                        Pred&& p, X&& x, Y&& y) const {
@@ -53,14 +53,14 @@ struct logical_transitive_f {
   }
 };
 
-constexpr auto logical_transitive = multary_n<4>(logical_transitive_f{});
-constexpr auto logical_project = multary_n<3>(logical_project_f{});
+constexpr auto transitive = multary_n<4>(transitive_f{});
+constexpr auto project = multary_n<3>(project_f{});
 
 /// all(pred)(x....) <=> pred(x) && ...
-constexpr auto all = logical_project(false, identity);
+constexpr auto all = fu::logic::project(false, identity);
 
 /// any(pred)(x...) <=> pred(x) || ...
-constexpr auto any = logical_project(true, basic_not);
+constexpr auto any = fu::logic::project(true, basic_not);
 
 /// none(pred)(x...) <=> !pred(x) && ...
 constexpr auto none = multary(mcompose(basic_not, any));

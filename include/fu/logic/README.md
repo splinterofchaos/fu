@@ -5,7 +5,7 @@
 properties of logical operations. Consider `fu::transitive(binary, join)`.
 ```c++
 // transitive(b,j)(x,y,z) <=> j(b(x,y), b(y,z))
-auto less = transitive(std::less<>{}, std::logical_and<>{});
+auto less = fu::transitive(std::less<>{}, std::logical_and<>{});
 less(x,y,z);  // computes and(less(x,y), less(y,z))
 ```
 While this version of `less` is correct, `less(x,y)` and `less(y,z)` must both
@@ -13,14 +13,14 @@ be computed, even if `less(x,y)` returns false--but `less(x,y) && less(y,z)`
 would short-circuit if this first one failed. `transitive` is too generic to
 make a good `less`.
 
-`fu::logic::logical_transitive` can be used to create short-circuit logical
+`fu::logic::transitive` can be used to create short-circuit logical
 evaluations, although its interface looks quite obscure.
 ```c++
-auto less = logical_transitive(false, identity, std::less<>{});
+auto less = fu::logic::transitive(false, identity, std::less<>{});
 less(1,2,3);  // computes 1 < 2 && 2 < 3
 less(3,2,1);  // computes 3 < 2 and stops
 ```
-## logical_transitive
+## logic::transitive
 
 All of the relational operations from `"fu/utility.h"` define themselves by
 `op = logical_transitive(identity, eval, predicate)`. `identity` represents the
@@ -29,7 +29,7 @@ identity element of the operation (`true` for `and` and `false` for `or`),
 the actual function evaluating the arguments.
 
 Given `op(a,b,c,d)`, first `eval(predicate(a,b))` will be computed. If false,
-then it returns `identity`, or otherwise will compose `eval(predicate(b,c))`
+then it returns `identity`, or otherwise will compute `eval(predicate(b,c))`
 and repeat until the argument list ends.
 
 *(See above for code example.)*
@@ -39,13 +39,13 @@ and repeat until the argument list ends.
 `logical_project` is an overly-generic function that will test every argument,
 `x_i`, with `eval(pred(x_i))` and returns `identity` when false. With only one
 argument, it returns `eval(x)`. As it happens, `all(f)` and `any(f)` can be
-defined in terms of `logical_project`.
+defined in terms of `logic::project`.
 ```c++
 /// all(pred)(x....) <=> pred(x) && ...
-constexpr auto all = logical_project(false, identity);
+constexpr auto all = logic::project(false, identity);
 
 /// any(pred)(x...) <=> pred(x) || ...
-constexpr auto any = logical_project(true, not_);
+constexpr auto any = logic::project(true, not_);
 
 auto big = [](int x) { return x > 5; };
 assert(any(big, 3, 4, 5, 6));

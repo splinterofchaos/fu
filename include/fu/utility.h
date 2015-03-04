@@ -76,7 +76,7 @@ constexpr struct numeric_relational_f {
   template<class Binary, class Identity=bool, class Ok=identity_f>
   constexpr auto operator() (Binary b, Identity ident=false, Ok ok = Ok{}) const
   {
-    return logic::logical_transitive(ident, ok, b);
+    return logic::transitive(ident, ok, b);
   }
 } numeric_relational{};
 
