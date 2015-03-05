@@ -78,4 +78,7 @@ int main() {
   GCC_STATIC_ASSERT(pow2(1) == 2);
   GCC_STATIC_ASSERT(pow2(2) == 4);
   GCC_STATIC_ASSERT(pow2(3) == 8);
+
+  static_assert(fu::rpart(fu::less, 10)(5), "");
+  static_assert(fu::rpart(fu::less, 5, 6, 7)(2,3,4), "");
 }

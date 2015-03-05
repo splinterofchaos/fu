@@ -28,7 +28,7 @@ std::string s;
 invoke(std::string::size, s);  // calls s.size()
 ```
 
-## closure(f,x...) and part(f,x...)
+## closure(f,x...), part(f,x...), rclosure(f,y...), rpart(f,y...)
 
 `closure(f,x...)` creates a partial function, `c`, such that `c(y...)` returns
 the result of `f(x..., y...)`. The arguments will be copied, but `std::ref` can
@@ -37,6 +37,8 @@ be used to avoid this.
 `part(f,x...)` works in the same way, except that it captures its arguments by
 perfectly forwarding. Because `part` may create references to temporaries,
 `closure` should be preferred if one is not sure.
+
+`rpart` and `rclosure` apply the arguments at the right-hand side.
 
 ```c+
 auto plus_one = closure(std::plus<>{}, 1);
@@ -47,6 +49,9 @@ auto plus_ref = closure(std::plus<>{}, std::ref(one));
 plus_ref(1);  // returns two
 one++;
 plus_ref(1);  // returns three
+
+auto minus_one = rclosure(std::minus<>{}, 1);
+minus_one(10);  // computes 10 - 1
 ```
 
 ## multary(f)

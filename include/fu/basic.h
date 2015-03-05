@@ -242,6 +242,59 @@ struct Part {
     return tpl::apply(std::move(f), std::move(t), args(std::forward<Y>(y)...));
   }
 #endif
+
+#undef RESULT
+};
+
+/// Reversed-Partial Application
+template<class F, class...X>
+struct rpart_f {
+  F f;
+
+  std::tuple<X...> t;
+
+  constexpr rpart_f(F f, X...x) : f(std::move(f))
+                                , t(std::forward<X>(x)...)
+  {
+  }
+
+  template<class...Y, class Tuple = std::tuple<Y...>>
+  static constexpr Tuple args(Y&&...y) {
+    return Tuple(std::forward<Y>(y)...);
+  }
+
+  // NOTE: due to gcc bug, decltype(auto) may not be used to define operator()
+  // because the wrong overloads will be chosen.
+  // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=64562
+#ifdef __clang__
+# define RESULT(F) decltype(auto)
+#else
+# define RESULT(F) std::result_of_t<F(Y..., X...)>
+#endif
+
+  template<class...Y>
+  constexpr RESULT(const F&) operator() (Y&&...y) const & {
+    return tpl::apply(f, args(std::forward<Y>(y)...), t);
+  }
+
+  template<class...Y>
+  constexpr RESULT(const F&&) operator() (Y&&...y) && {
+    return tpl::apply(std::move(f), args(std::forward<Y>(y)...), std::move(t));
+  }
+
+#ifdef __clang__
+  template<class...Y>
+  constexpr RESULT(F&) operator() (Y&&...y) & {
+    return tpl::apply(f, args(std::forward<Y>(y)...), t);
+  }
+
+  template<class...Y>
+  constexpr RESULT(const F&&) operator() (Y&&...y) const && {
+    return tpl::apply(std::move(f), args(std::forward<Y>(y)...), std::move(t));
+  }
+#endif
+
+#undef RESULT
 };
 
 
@@ -253,6 +306,15 @@ constexpr auto closure = MakeT<Part>{};
 
 /// Like closure, but forwards its arguments.
 constexpr auto part = ForwardT<Part>{};
+
+/// Closure: reverse partial application by copying the parameters.
+/// Given f(x,y,z):
+///   closure(f,z) = g(x,y) = f(x,y,z)
+///   closure(f,y,z) = g(x) = f(x,y,z)
+constexpr auto rclosure = MakeT<rpart_f>{};
+
+/// Like closure, but forwards its arguments.
+constexpr auto rpart = ForwardT<rpart_f>{};
 
 /// A function that takes `n` or more arguments. If given only one argument, it
 /// will return a partial application.
