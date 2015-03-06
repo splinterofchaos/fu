@@ -15,10 +15,16 @@ writing.
 
 Returns `x`
 
-## invoke(f, x...)
+## invoke(f, x...) and forwarder(f)
 
-Invokes `f` with the arguments, `x...`. `f` may be a regular function, member
-function pointer, or member object pointer.
+`invoke(f,x...)` simply calls `f` with the arguments, `x...`. `f` may be a
+regular function, member function pointer, or member object pointer.
+`invoke(f)` will simply call `f()`.
+
+If given a member pointer, `std::mem_fn` may be used to create a function
+object, but that doesn't help when one doesn't know if the function is a member
+pointer. `forwarder(f)` can be used to create an invokable object, whether `f`
+is a member pointer, regular function, or function object.
 
 ```c++
 void f();
@@ -26,6 +32,10 @@ invoke(f);  // calls f()
 
 std::string s;
 invoke(std::string::size, s);  // calls s.size()
+
+// Collecting the lengths of some strings:
+std::transform(strs.begin(), strs.end(), std::back_inserter(lengths),
+               forwarder(&std::string::size));
 ```
 
 ## closure(f,x...), part(f,x...), rclosure(f,y...), rpart(f,y...)

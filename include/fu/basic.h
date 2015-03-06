@@ -25,15 +25,15 @@ constexpr struct identity_f {
   }
 } identity{};
 
-/// Forwarder -- A function type-erasure.
+/// forwarder_f -- A function type-erasure.
 ///
 /// Base case: Function pointers and objects.
 /// Lifts functions pointers to objects and acts as a type erasure between
 /// function pointers and objects.
 template<class F>
-struct Forwarder : public F {
+struct forwarder_f : public F {
   F f;
-  constexpr Forwarder(F f) : f(std::move(f)) { }
+  constexpr forwarder_f(F f) : f(std::move(f)) { }
   
   template<class...X>
   constexpr decltype(auto) operator() (X&&...x) const {
@@ -41,25 +41,25 @@ struct Forwarder : public F {
   }
 };
 
-/// Forwarder: Function reference specialization.
+/// forwarder_f: Function reference specialization.
 template<class R, class...X>
-struct Forwarder<R(X...)> {
+struct forwarder_f<R(X...)> {
   // Function type must be converted to a pointer.
   using type = R(*)(X...);
 
   // Note: gcc 4.9 will not consider `type f` a constexpr.
   R(*f)(X...);
-  constexpr Forwarder(type f) : f(f) { }
+  constexpr forwarder_f(type f) : f(f) { }
 
   constexpr R operator() (X&&...x) const {
     return f(std::forward<X>(x)...);
   }
 };
 
-/// Forwarder: Function pointer specialization.
+/// forwarder_f: Function pointer specialization.
 template<class R, class...X>
-struct Forwarder<R(*)(X...)> : Forwarder<R(X...)> {
-  using base = Forwarder<R(X...)>;
+struct forwarder_f<R(*)(X...)> : forwarder_f<R(X...)> {
+  using base = forwarder_f<R(X...)>;
   using base::base;
   using base::operator();
 };
@@ -179,21 +179,21 @@ constexpr MemFn<F> mem_fn(F f) {
   return {f};
 }
 
-/// to_functor: Ensures function, f, is an object.
+/// forwarder: Ensures function, f, is an object.
 template<class F>
-constexpr F to_functor(F&& f) { return std::forward<F>(f); }
+constexpr F forwarder(F&& f) { return std::forward<F>(f); }
 
 /// Function pointer overload: Lifts `f` to a function object.
 template<class R, class...X>
-constexpr Forwarder<R(X...)> to_functor(R(*f)(X...)) { return f; }
+constexpr forwarder_f<R(X...)> forwarder(R(*f)(X...)) { return f; }
 
 /// Member function overload: Lifts `f` using MemFn.
 template<class T, class O>
-constexpr auto to_functor(T O::*f) { return mem_fn(f); }
+constexpr auto forwarder(T O::*f) { return mem_fn(f); }
 
 /// Makes a function-object type out of `F`.
 template<class F>
-using ToFunctor = decltype(to_functor(std::declval<F>()));
+using ToFunctor = decltype(forwarder(std::declval<F>()));
 
 /// Partial Application
 template<class F, class...X>
