@@ -9,6 +9,23 @@ std::tuple<int, X&, Y&> u = fu::tpl::forward_tuple(1, x, y);
 std::tuple<X&, Y&> w = fu::tpl::tie(x, y);
 ```
 
+It also provides simple functions to retrieve tuple elements.
+
+```c++
+std::tuple<int,float,char> t;
+
+using fu::tpl::_0;
+using fu::tpl::_1;
+using fu::tpl::last;
+_0(t);  // eqivilant to std::get<0>(t)
+_1(t);  // eqivilant to std::get<1>(t)
+
+constexpr auto _2 = fu::tpl::get_f<2>{};  // or use fu::tpl::_2
+_2(t);    // equivalent to std::get<2>(t)
+
+last(t);  // eqivilant to std::get<std::tuple_size<decltype(t)>{} - 1>(t)
+```
+
 To concatenate two tuples, one can use `fu::tpl::concat` as the polymorphic object form of `std::tuple_cat`.
 
 ```c++

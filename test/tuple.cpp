@@ -35,8 +35,9 @@ int main() {
   constexpr auto t2 = map(Double(), t1);
   static_assert(std::is_same<decltype(t2), T1>::value, "map changed the type");
 
-  static_assert(std::get<0>(t2) == 2, "");
-  static_assert(std::get<1>(t2) == 5.0, "");
+  static_assert(_0(t2) == 2, "");
+  static_assert(_1(t2) == 5.0, "");
+  static_assert(last(t2) == 5.0, "");
 
   static_assert(map(fu::add, tuple(0,1), tuple(2,4)) == tuple(2,4,3,5), "");
 

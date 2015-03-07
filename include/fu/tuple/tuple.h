@@ -11,11 +11,6 @@
 namespace fu {
 namespace tpl {
 
-template<class...X>
-constexpr size_t size(const std::tuple<X...>&) {
-  return sizeof...(X);
-}
-
 constexpr struct concat_f {
   template<class...Tuple>
   constexpr auto operator() (Tuple&&...t) const {

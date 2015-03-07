@@ -64,5 +64,41 @@ constexpr auto tie = fu::TieT<std::tuple>{};
 /// Constructs a tuple, similar to std::forward_as_tuple.
 constexpr auto forward_tuple = fu::ForwardT<std::tuple>{};
 
+// TODO: Define this in meta.
+template<std::size_t i>
+using Index = std::integral_constant<std::size_t, i>;
+
+template<class...X>
+constexpr Index<sizeof...(X)>
+size(const std::tuple<X...>&) { return {}; }
+
+template<class Tuple>
+constexpr decltype(fu::tpl::size(std::declval<Tuple>()))
+size() { return {}; }
+
+template<std::size_t i>
+struct get_f {
+  template<class Tuple>
+  constexpr decltype(auto) operator() (Tuple&& t) const {
+    return std::get<i>(std::forward<Tuple>(t));
+  }
+};
+
+template<std::size_t i>
+struct rget_f {
+  template<class Tuple>
+  constexpr decltype(auto) operator() (Tuple&& t) const {
+    return std::get<size<Tuple>() - i - 1>(std::forward<Tuple>(t));
+  }
+};
+
+constexpr auto _0 = get_f<0>{};
+constexpr auto _1 = get_f<1>{};
+constexpr auto _2 = get_f<2>{};
+constexpr auto _3 = get_f<3>{};
+constexpr auto _4 = get_f<4>{};
+
+constexpr auto last = rget_f<0>{};
+
 } // namespace tpl
 } // namespace fu
