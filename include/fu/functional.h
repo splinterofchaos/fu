@@ -343,7 +343,7 @@ struct flip_f {
                                           std::tuple<X...> args)
   {
     return fu::invoke(std::forward<F>(f),
-                      std::get<sizeof...(X) - i - 1>(std::move(args))...);
+                      tpl::rget_f<i>{}(std::move(args))...);
   }
 
   template<class F, class...X>
