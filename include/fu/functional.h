@@ -7,6 +7,7 @@
 #include <functional>
 
 #include <fu/basic.h>
+#include <fu/meta.h>
 
 namespace fu {
 
@@ -336,21 +337,45 @@ struct split_f {
 /// split(f,l,r)(x) <=> f(l(x), r(x))
 constexpr auto split = multary_n<3>(split_f{});
 
+struct proj_arg_f {
+  template<class I, class X, class...Y>
+  constexpr X&& operator() (std::integral_constant<I,0>, X&& x, const Y&...) const {
+    return std::forward<X>(x);
+  }
+
+  template<class I, I i, class X, class...Y,
+           class = enable_if_t<(i > 0)>>
+  constexpr decltype(auto) operator() (std::integral_constant<I,i>, const X&, Y&&...y) const
+  {
+    static_assert(i < sizeof...(Y) + 1, "too few arguments");
+    return (*this)(Integral<I,i-1>{}, std::forward<Y>(y)...);
+  }
+};
+
+/// proj_arg(Size<0>{}, x, y) <=> x
+/// proj_arg(Size<1>{}, x, y) <=> y
+constexpr auto proj_arg = multary(proj_arg_f{});
+
+template<std::size_t i, class...X>
+constexpr decltype(auto) proj_arg_n(X&&...x) {
+  return proj_arg(Size<i>{}, std::forward<X>(x)...);
+}
+
 struct flip_f {
   template<class I, I...i, class F, class...X>
   static constexpr decltype(auto) reverse(std::integer_sequence<I,i...>,
                                           F&& f,
-                                          std::tuple<X...> args)
+                                          X&&...x)
   {
     return fu::invoke(std::forward<F>(f),
-                      tpl::rget_f<i>{}(std::move(args))...);
+                      proj_arg_n<sizeof...(X) - i - 1>(std::forward<X>(x)...)...);
   }
 
   template<class F, class...X>
   constexpr decltype(auto) operator() (F&& f, X&&...x) const {
     return reverse(std::index_sequence_for<X...>{},
                    std::forward<F>(f),
-                   tpl::forward_tuple(std::forward<X>(x)...));
+                   std::forward<X>(x)...);
   }
 };
 
