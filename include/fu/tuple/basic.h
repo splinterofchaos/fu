@@ -6,7 +6,6 @@
 #include <fu/iseq.h>
 #include <fu/invoke.h>
 #include <fu/make/make.h>
-#include <fu/meta.h>
 
 namespace fu {
 namespace tpl {
@@ -66,7 +65,7 @@ constexpr auto tie = fu::TieT<std::tuple>{};
 constexpr auto forward_tuple = fu::ForwardT<std::tuple>{};
 
 template<class...X>
-constexpr Size<sizeof...(X)>
+constexpr std::integral_constant<std::size_t, sizeof...(X)>
 size(const std::tuple<X...>&) { return {}; }
 
 template<class Tuple>
