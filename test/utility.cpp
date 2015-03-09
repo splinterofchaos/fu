@@ -1,6 +1,8 @@
 
 #include <fu/fu.h>
 
+#include <list>
+
 int main() {
   static_assert(fu::add(1)(2) == 3, "");
   static_assert(fu::add(1,2,3,4) == 10, "");
@@ -20,4 +22,19 @@ int main() {
   static_assert(!fu::less(5)(4,3,2,1), "");
   static_assert(fu::eq(1,1,1,1), "");
   static_assert(!fu::eq(1,2,2,2), "");
+
+  {
+    constexpr int xs[3] = {0,1,2};
+    static_assert(fu::size(xs) == 3, "");
+    static_assert(fu::index(1, xs) == 1, "");
+    static_assert(fu::front(xs) == 0, "");
+    static_assert(fu::back(xs) == 2, "");
+  }
+
+  {
+    // Test passes as long as this compiles.
+    std::list<int> xs;
+    fu::push_back(1, xs);
+    fu::push_front(1, xs);
+  }
 }

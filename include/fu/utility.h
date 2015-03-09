@@ -130,4 +130,83 @@ constexpr struct post_dec_f {
   }
 } post_dec{};
 
+constexpr struct size_f {
+  template<class X, std::size_t N>
+  constexpr std::size_t operator() (X (&)[N]) const {
+    return N;
+  }
+
+  template<class X>
+  constexpr auto operator() (const X& x) const {
+    return x.size();
+  }
+} size{};
+
+struct index_f {
+  template<class Index, class X>
+  constexpr decltype(auto) operator() (Index i, X&& x) const {
+    return std::forward<X>(x)[i];
+  }
+};
+
+constexpr auto index = multary(index_f{});
+
+constexpr struct back_f {
+  template<class X, std::size_t N>
+  constexpr X& operator() (X (&arr)[N]) const {
+    return arr[N-1];
+  }
+
+  template<class Container>
+  constexpr decltype(auto) operator() (Container&& c) const {
+    return std::forward<Container>(c).back();
+  }
+} back{};
+
+constexpr struct front_f {
+  template<class X>
+  constexpr X& operator() (X* arr) const {
+    return arr[0];
+  }
+
+  template<class Container>
+  constexpr decltype(auto) operator() (Container&& c) const {
+    return std::forward<Container>(c).front();
+  }
+} front{};
+
+// TODO: While taking the element to insert first matches the functional style
+// better, does it make sense for C++?
+
+struct push_back_f {
+  template<class X, class Container>
+  Container&& operator() (X&& x, Container&& c) const {
+    c.push_back(std::forward<X>(x));
+    return std::forward<Container>(c);
+  }
+};
+
+constexpr auto push_back = multary(push_back_f{});
+
+struct push_front_f {
+  template<class X, class Container>
+  Container&& operator() (X&& x, Container&& c) const {
+    c.push_front(std::forward<X>(x));
+    return std::forward<Container>(c);
+  }
+};
+
+constexpr auto push_front = multary(push_front_f{});
+
+// TODO: emplace?
+
+struct insert_f {
+  template<class X, class Container>
+  auto operator() (X&& x, Container&& c) const {
+    return c.insert(std::forward<X>(x));
+  }
+};
+
+constexpr auto insert = multary(insert_f{});
+
 } // namespace fu

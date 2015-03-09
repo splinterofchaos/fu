@@ -215,7 +215,36 @@ one();  // returns 1
 
 # "fu/utility.h"
 
-Implements transparent function objects for operators like `+`, `-`, `%`, etc.
+Implements transparent function objects for operators like `+`, `-`, `%`, etc.,
+as well as utilities for containers like `size`, `push_back`, etc..
+
+## size, index, back, front
+
+These functions take a container or array as arguments.
+
+```c++
+int xs[5] = {0,1,2,3,4};
+std::list<int> ys = {0,1,2,3,4};
+
+fu::size(xs);   // returns 5
+fu::size(ys);   // returns 5
+fu::front(xs);  // returns 0
+fu::back(ys);   // returns 4
+```
+
+## push_back, push_front, insert
+
+These functions call the associated member function, but take the object to
+insert as the first argument.
+
+```c++
+std::set<int> ys(4);
+fu::insert(10, ys);  // ys = {10}
+
+int xs[] = {0,1,2};
+std::for_each(std::begin(ys), std::end(ys), fu::flip(fu::insert, std::ref(ys));
+// ys = {0, 1, 2, 10}
+```
 
 ## add, sub(tract), mult(iply) div(ide), rem(ainder), lshift, rshift, or\_, and\_, xor\_ bit_or
 
