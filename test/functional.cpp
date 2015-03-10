@@ -26,7 +26,18 @@ constexpr int divide(int x, int y) {
     return x / y;
 }
 
+constexpr int ok() {
+  static_assert(true, "");
+  return 0;
+}
+
+constexpr int five() {
+  return 5;
+}
+
 int main() {
+  static_assert(fu::sequence(ok, ok, five) == 5, "");
+
   static_assert(fu::rassoc(divide, 10,2) == 10/2, "");
   static_assert(fu::rassoc(divide, 10,8,4) == 10/(8/4), "");
   static_assert(fu::rassoc(divide, 10,8,8,2) == 10/(8/(8/2)), "");

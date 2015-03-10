@@ -23,6 +23,20 @@ template<>
 struct Rank<0> {
 };
 
+constexpr struct sequence_f {
+  template<class F>
+  constexpr decltype(auto) operator() (F&& f) const {
+    return fu::invoke(std::forward<F>(f));
+  }
+
+  template<class F, class G, class...H>
+  constexpr decltype(auto) operator() (F&& f, G&& g, H&&...h) const {
+    // Note the use of comma operator.
+    return fu::invoke(std::forward<F>(f)), (*this)(std::forward<G>(g),
+                                                   std::forward<H>(h)...);
+  }
+} sequence{};
+
 struct lassoc_f {
   template<class F, class X, class Y>
   constexpr decltype(auto) operator() (F&& f, X&& x, Y&& y) const {
