@@ -89,4 +89,7 @@ int main() {
   auto tie1 = tie(x, cx);
   auto tie2 = std::tie(x, cx);
   static_assert(std::is_same<decltype(tie1), decltype(tie2)>::value, "");
+
+  static_assert(rot(tuple(1,2,3)) == tuple(2,3,1), "");
+  static_assert(rrot(tuple(1,2,3)) == tuple(3,1,2), "");
 }

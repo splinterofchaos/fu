@@ -216,5 +216,37 @@ constexpr struct tail_f {
   }
 } tail{};
 
+constexpr struct rot_f {
+  template<std::size_t...i, class Tuple>
+  static constexpr decltype(auto) do_rot(std::index_sequence<0, i...>,
+                                         Tuple&& t)
+  {
+    return forward_tuple(std::get<i>(std::forward<Tuple>(t))...,
+                         std::get<0>(std::forward<Tuple>(t)));
+  }
+
+  template<class Tuple>
+  constexpr decltype(auto) operator() (Tuple&& t) const {
+    return do_rot(iseq::make(t), std::forward<Tuple>(t));
+  }
+} rot{};
+
+constexpr struct rrot_f {
+  template<std::size_t...i, class Tuple>
+  static constexpr decltype(auto) do_rot(std::index_sequence<i...>,
+                                         Tuple&& t)
+  {
+    static_assert(sizeof...(i) == size<Tuple>() - 1, "");
+    return forward_tuple(std::get<size<Tuple>() - 1>(std::forward<Tuple>(t)),
+                         std::get<i - 1>(std::forward<Tuple>(t))...);
+  }
+
+  template<class Tuple>
+  constexpr decltype(auto) operator() (Tuple&& t) const {
+    return do_rot(iseq::drop<1>(iseq::make(t)),
+                  std::forward<Tuple>(t));
+  }
+} rrot{};
+
 } // namespace tpl
 } // namespace fu
