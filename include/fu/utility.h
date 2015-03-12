@@ -130,6 +130,27 @@ constexpr struct post_dec_f {
   }
 } post_dec{};
 
+struct max_f {
+  // FIXME: This should return decltype(auto), but GCC 4.9 deduces that the
+  // call, max(1,2,3) returns a reference to temporary from Part::operator().
+  // Changing Part::args to act like std::forward_as_tuple fixes this, but
+  // makes the expression non-constexpr.
+  template<class X, class Y>
+  constexpr auto operator() (X&& x, Y&& y) const {
+    return x < y ? std::forward<Y>(y) : std::forward<X>(x);
+  }
+};
+
+struct min_f {
+  template<class X, class Y>
+  constexpr auto operator() (X&& x, Y&& y) const {
+    return x < y ? std::forward<X>(x) : std::forward<Y>(y);
+  }
+};
+
+constexpr auto max = multary(lassoc(max_f{}));
+constexpr auto min = multary(lassoc(min_f{}));
+
 constexpr struct size_f {
   template<class X, std::size_t N>
   constexpr std::size_t operator() (X (&)[N]) const {

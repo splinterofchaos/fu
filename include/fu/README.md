@@ -246,6 +246,16 @@ std::for_each(std::begin(ys), std::end(ys), fu::flip(fu::insert, std::ref(ys));
 // ys = {0, 1, 2, 10}
 ```
 
+## min, max
+
+```c++
+auto five = fu::max(1,2,3,4,5);
+auto one = fu::min(1,2,3,4,5);
+
+constexpr auto one_or_more = fu::max(1);
+constexpr auto ten_or_less = fu::min(10);
+```
+
 ## add, sub(tract), mult(iply) div(ide), rem(ainder), lshift, rshift, or\_, and\_, xor\_ bit_or
 
 These functions are all both `multary` and left-associative.

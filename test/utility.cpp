@@ -23,6 +23,9 @@ int main() {
   static_assert(fu::eq(1,1,1,1), "");
   static_assert(!fu::eq(1,2,2,2), "");
 
+  static_assert(fu::max(0,4,2) == 4, "");
+  static_assert(fu::min(0,4,2) == 0, "");
+
   {
     constexpr int xs[3] = {0,1,2};
     static_assert(fu::size(xs) == 3, "");
