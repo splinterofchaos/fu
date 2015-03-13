@@ -1,4 +1,14 @@
 
+# Documentation
+
+FU must be compiled with gcc 4.9 or later, or clang 3.5, with the flag
+`-std=c++14`. MSVC is not supported for lack of C++14 features.
+
+The subdirectories contain modules with their own documentation, but can be
+included from the associated file in the main directory. For example,
+`fu/tuple.h` will include `fu/tuple/basic.h` and `fu/tuple/tuple.h`. See
+`fu/tuple/README.md` for its documentation.
+
 # "fu/fu.h"
 
 This file includes all other FU headers. Use this is you don't know what
