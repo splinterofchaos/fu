@@ -4,6 +4,23 @@
 This file includes all other FU headers. Use this is you don't know what
 components you need, or you need them all (albeit unlikely).
 
+## "fu/invoke.h"
+
+This file contains an implementation of
+[n3727](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3727.html)'s `std::invoke`.
+
+`invoke(f,x...)` simply calls `f` with the arguments, `x...`. `f` may be a
+regular function, member function pointer, or member object pointer.
+`invoke(f)` will simply call `f()`.
+
+```c++
+void f();
+invoke(f);  // calls f()
+
+std::string s;
+invoke(std::string::size, s);  // calls s.size()
+```
+
 # "fu/basic.h"
 
 This file contains miscellaneous utilities that the rest of the library builds
@@ -15,11 +32,7 @@ writing.
 
 Returns `x`
 
-## invoke(f, x...) and forwarder(f)
-
-`invoke(f,x...)` simply calls `f` with the arguments, `x...`. `f` may be a
-regular function, member function pointer, or member object pointer.
-`invoke(f)` will simply call `f()`.
+## forwarder(f)
 
 If given a member pointer, `std::mem_fn` may be used to create a function
 object, but that doesn't help when one doesn't know if the function is a member
@@ -27,12 +40,6 @@ pointer. `forwarder(f)` can be used to create an invokable object, whether `f`
 is a member pointer, regular function, or function object.
 
 ```c++
-void f();
-invoke(f);  // calls f()
-
-std::string s;
-invoke(std::string::size, s);  // calls s.size()
-
 // Collecting the lengths of some strings:
 std::transform(strs.begin(), strs.end(), std::back_inserter(lengths),
                forwarder(&std::string::size));
