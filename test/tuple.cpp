@@ -71,8 +71,9 @@ int main() {
                             , tuple(      1,       1));
   static_assert(apTest == tuple(0,1), "");
 
-  constexpr auto zipTest = zip(fu::add, tuple(0, 1), tuple(1, 2), tuple(2, 3));
+  constexpr auto zipTest = zip_with(fu::add, tuple(0, 1), tuple(1, 2), tuple(2, 3));
   static_assert(zipTest == tuple(3,6), "");
+  static_assert(zip(tuple(1,2), tuple(1,2)) == tuple(tuple(1,1), tuple(2,2)), "");
 
   int x = 1;
   auto ref = tuple(std::ref(x), std::cref(x));

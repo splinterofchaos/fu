@@ -90,7 +90,7 @@ std::tuple<X, X> v = apply(concat, u);
 auto v2 = apply(concat, map(tuple, tuple(x,x)));
 ```
 
-`fu::tpl::zip` can be used to join two or more tuples over a given function.
+`fu::tpl::zip_with` can be used to join two or more tuples over a given function. `zip` will simply apply the function, `make_tuple`.
 
 ```c++
 using namespace fu::tpl;
@@ -98,8 +98,11 @@ using namespace fu::tpl;
 using Vec = std::tuple<int, int>
 auto a = tuple(x0, y0);
 auto b = tuple(x1, y1);
-auto dist = zip(fu::sub, b, a);
+auto dist = zip_with(fu::sub, b, a);
 assert(dist == tuple(x1 - x0, y1 - y0));
+
+auto ab = zip(a,b);
+assert(ab == tuple(tuple(x0,x1), tuple(y0,y1)));
 ```
 
 `fu::tpl::foldl` and `::foldr` allow one to fold a tuple by a binary function.

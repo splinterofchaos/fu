@@ -82,24 +82,25 @@ struct map_f {
 
 constexpr auto map = multary(map_f{});
 
-/// zip(f, {x,y,z}, {a,b,c}) = {f(x,a), f(y,b), f(z,c)}
-struct zip_f {
+/// zip_with(f, {x,y,z}, {a,b,c}) = {f(x,a), f(y,b), f(z,c)}
+struct zip_with_f {
   template<size_t...i, class F, class...T>
-  constexpr auto operator() (std::index_sequence<i...> is, F& f, T&&...t) const {
+  constexpr auto do_zip(std::index_sequence<i...> is, F&& f, T&&...t) const {
     return apply_rows(is, f, std::forward<T>(t)...);
   }
 
   template<class F, class T, class...U>
-  constexpr auto operator() (F& f, T&& t, U&&...u) const {
+  constexpr auto operator() (F&& f, T&& t, U&&...u) const {
     using Size = std::tuple_size<std::decay_t<T>>;
-    return (*this)(std::make_index_sequence<Size::value>{},
-                   std::forward<F>(f),
-                   std::forward<T>(t),
-                   std::forward<U>(u)...);
+    return do_zip(std::make_index_sequence<Size::value>{},
+                  std::forward<F>(f),
+                  std::forward<T>(t),
+                  std::forward<U>(u)...);
   }
 };
 
-constexpr auto zip = multary(zip_f{});
+constexpr auto zip_with = multary(zip_with_f{});
+constexpr auto zip = zip_with(tuple);
 
 /// ap({f,g,h}, {x,y,z}, {a,b,c}) = {f(x,a), g(y,b), h(z,c)}
 struct ap_f {
