@@ -91,8 +91,9 @@ struct zip_with_f {
 
   template<class F, class T, class...U>
   constexpr auto operator() (F&& f, T&& t, U&&...u) const {
-    using Size = std::tuple_size<std::decay_t<T>>;
-    return do_zip(std::make_index_sequence<Size::value>{},
+    static_assert(meta::all<size<U>() == size<T>()...>{},
+                  "cannot zip tuples of varying size");
+    return do_zip(std::make_index_sequence<size<T>()>{},
                   std::forward<F>(f),
                   std::forward<T>(t),
                   std::forward<U>(u)...);

@@ -73,6 +73,7 @@ int main() {
 
   constexpr auto zipTest = zip_with(fu::add, tuple(0, 1), tuple(1, 2), tuple(2, 3));
   static_assert(zipTest == tuple(3,6), "");
+  static_assert(zip(tuple(1)) == tuple(tuple(1)), "");
   static_assert(zip(tuple(1,2), tuple(1,2)) == tuple(tuple(1,1), tuple(2,2)), "");
 
   int x = 1;
