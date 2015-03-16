@@ -7,6 +7,9 @@ Fu hopes to offer
  * Utilities for defining functions in terms of other ones.
  * A set of transparent function objects for common operations like `add`, `eq`, etc.. 
  * Utilities for creating transparent function objects.
+
+github: https://github.com/splinterofchaos/fu
+biicode: http://www.biicode.com/splinterofchaos/fu
  
 # Transparent Function Objects
 It can be difficult in C++ to use template functions with higher order functions, like those defined in `<algorithm>`. For example:
@@ -14,13 +17,13 @@ It can be difficult in C++ to use template functions with higher order functions
 #include <iostream>
 
 template<class X>
-void print(std::ostream& o, const X& x) {
-  o << x;
+void print(const X& x) {
+  std::cout << x;
 }
 
 int main() {
   auto v = {1,2,3,4};
-  std::for_each(std::begin(v), std::end(v), std::bind(print<int>, std::ref(std::cout), std::placeholders::_1));
+  std::for_each(std::begin(v), std::end(v), std::bind(print<int>, std::placeholders::_1));
 }
 ```
 Not only must we explicitely specify the type of `print`'s arguments to avoid ambiguity, but `std::bind`'s syntax is overly verbose and inconvenient. Using `fu`, we can write...
