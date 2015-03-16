@@ -39,5 +39,6 @@ int main() {
     std::list<int> xs;
     fu::push_back(1, xs);
     fu::push_front(1, xs);
+    fu::ref(xs).get().front() = 2;
   }
 }

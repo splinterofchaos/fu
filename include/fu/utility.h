@@ -230,4 +230,20 @@ struct insert_f {
 
 constexpr auto insert = multary(insert_f{});
 
+/// Function-object form of std::ref
+struct ref_f {
+  template<class X>
+  auto operator() (X&& x) const {
+    return std::ref(x);
+  }
+} ref{};
+
+/// Function-object form of std::cref
+struct cref_f {
+  template<class X>
+  auto operator() (const X& x) const {
+    return std::cref(x);
+  }
+} cref{};
+
 } // namespace fu
