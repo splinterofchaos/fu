@@ -318,40 +318,36 @@ constexpr auto rpart = ForwardT<rpart_f>{};
 
 /// A function that takes `n` or more arguments. If given only one argument, it
 /// will return a partial application.
-template<size_t n, class _F>
-struct multary_n_f : ToFunctor<_F> {
-  using F = ToFunctor<_F>;
-
-  constexpr multary_n_f(F f) : F(std::move(f)) { }
-
+template<size_t n>
+struct multary_n_f {
   // The result of applying this m arguments where m <= n.
-  template<class...X>
-  using Partial = multary_n_f<n - sizeof...(X), Part<F, X...>>;
+  template<class F, class...X>
+  using Partial = Part<multary_n_f<n - sizeof...(X)>, Part<F,X...>>;
 
   /// Too few arguments: Return another multary function.
-  template<class...X, class = enable_if_t<(sizeof...(X) < n)>>
-  constexpr Partial<X...> operator() (X...x) const & {
-    return Partial<X...>(closure(F(*this), std::move(x)...));
+  template<class F, class...X, class = enable_if_t<(sizeof...(X) < n)>>
+  constexpr auto operator() (F f, X...x) const {
+    return part(multary_n_f<n - sizeof...(X)>{},
+                closure(std::move(f), std::move(x)...));
   }
 
   /// Exactly n arguments: Partially apply.
-  template<class...X, class = enable_if_t<(sizeof...(X) == n)>>
-  constexpr Part<F, X...> operator() (X...x) const & {
-    return closure(F(*this), std::move(x)...);
+  template<class F, class...X, class = enable_if_t<(sizeof...(X) == n)>>
+  constexpr auto operator() (F&& f, X...x) const {
+    return closure(std::forward<F>(f), std::move(x)...);
   }
 
   /// More than n arguments: invoke.
-  template<class...X, class = enable_if_t<(sizeof...(X) > n)>>
-  constexpr decltype(auto) operator() (X&&...x) const &
+  template<class F, class...X, class = enable_if_t<(sizeof...(X) > n)>>
+  constexpr decltype(auto) operator() (F&& f, X&&...x) const
   {
-    return static_cast<const F&>(*this)(std::forward<X>(x)...);
+    return fu::invoke(std::forward<F>(f), std::forward<X>(x)...);
   }
 };
 
-template<class F>
-struct multary_n_f<0, F> : ToFunctor<F> {
-  using Fn = ToFunctor<F>;
-  using Fn::operator();
+template<>
+struct multary_n_f<0> : invoke_f {
+  using invoke_f::operator();
 };
 
 /// A function that takes two or more arguments. If given only one argument, it
@@ -361,8 +357,8 @@ constexpr struct multary_f {
   //       basic_multary = MakeT<multary_n_f>{};
   //       multary = part(basic_multary, Int<0>{})
   template<class F>
-  constexpr multary_n_f<1, F> operator() (F f) const {
-    return multary_n_f<1, F>(std::move(f));
+  constexpr auto operator() (F f) const {
+    return closure(multary_n_f<1>{}, std::move(f));
   }
 } multary{};
 
@@ -374,16 +370,13 @@ constexpr struct multary_f {
 template<size_t n>
 struct make_multary_n_f {
   template<class F>
-  constexpr auto operator() (F f) const -> multary_n_f<n, F>
-  {
-    return {std::move(f)};
+  constexpr auto operator() (F f) const {
+    return closure(multary_n_f<n>{}, std::move(f));
   }
 
   template<class F>
-  constexpr auto operator() (std::reference_wrapper<F> f) const
-    -> multary_n_f<n, F&>
-  {
-    return {std::move(f)};
+  constexpr auto operator() (std::reference_wrapper<F> f) const {
+    return part(multary_n_f<n>{}, f.get());
   }
 };
 
@@ -391,8 +384,8 @@ template<size_t n>
 constexpr auto multary_n = make_multary_n_f<n>{};
 #else
 template<size_t n, class F>
-constexpr multary_n_f<n, F> multary_n(F f) {
-  return multary_n_f<n, F>(std::move(f));
+constexpr auto multary_n(F f) {
+  return closure(multary_n_f<n>{}, std::move(f));
 }
 #endif  // __clang__
 
