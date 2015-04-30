@@ -1,6 +1,8 @@
+language: cpp
 
-env:
-  - CXX=g++
+compiler:
+  - clang
+  - gcc
 
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
@@ -11,3 +13,6 @@ before_install:
   - $CXX -v
 
 script: "./run-tests.sh"
+
+cache: apt
+
